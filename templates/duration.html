@@ -1,0 +1,337 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+    <script>
+
+        function duration(dataContent) {
+
+
+            data = JSON.parse(dataContent).visitDurations;
+
+            var numberItem = Object.keys(data).length;
+            // Xet chieu cao, rong
+            var fullWith = 150 * numberItem;
+            var fullHeight = 400;
+
+            var margin = {
+                        top: 20,
+                        right: 20,
+                        bottom: 30,
+                        left: 40
+                    },
+                    width = fullWith - margin.left - margin.right,
+                    height = fullHeight - margin.top - margin.bottom;
+
+            var x0 = d3.scale.ordinal()
+                    .rangeRoundBands([0, width], .1);
+
+            var x1 = d3.scale.ordinal();
+
+            var y = d3.scale.linear()
+                    .range([height, 0]);
+
+            // Màu hiện thị các cột
+            var color = d3.scale.ordinal()
+                    .range([
+                        "E30310",
+                        "E3651C",
+                        "E3A038",
+                        "E3CB0C",
+                        "46A2E3",
+                        "4AE328",
+                        "46A2E3",
+                        "7FE327",
+                        "A4BDE3",
+                        "B51B9B",
+                        "6B6B6B",
+                        "000000",
+                    ]);
+
+            // Cột x
+            var xAxis = d3.svg.axis()
+                    .scale(x0)
+                    .orient("bottom");
+
+            // Cột y
+            var yAxis = d3.svg.axis()
+                    .scale(y)
+                    .orient("left")
+                    .tickFormat(d3.format(""));
+
+            //with
+            var w = width + margin.left + margin.right;
+            // height
+            var h = height + margin.top + margin.bottom;
+            // Hiển thị
+            var svg = d3.select("#visualize").append("svg")
+                    .attr("width", w)
+                    .attr("height", h)
+                    .append("g")
+                    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+            /*
+             var data = [{
+             TestSuite: "TestSuite1",
+             True: 2,
+             False: 5
+             }, {
+             TestSuite: "TestSuite2",
+             True: 6,
+             False: 3
+             }, {
+             TestSuite: "TestSuite3",
+             True: 1,
+             False: 7
+             }, {
+             TestSuite: "TestSuite4",
+             True: 5,
+             False: 2
+             }, {
+             TestSuite: "TestSuite5",
+             True: 2,
+             False: 2
+             }, {
+             TestSuite: "TestSuite6",
+             True: 9,
+             False: 4
+             }];
+
+
+             var data = [{
+             "date": "2016-09-26",
+             "under1Minute": 17095,
+             "from1To5Minutes": 2594,
+             "from5To10Minutes": 1063,
+             "from10To20Minutes": 1265,
+             "from20To40Minutes": 1266,
+             "from40To60Minutes": 450,
+             "from60To90Minutes": 370,
+             "from90To120Minutes": 235,
+             "from2To3Hours": 205,
+             "from3To4Hours": 115,
+             "from4To6Hours": 72,
+             "over6Hours": 101
+             }, {
+             "date": "2016-09-27",
+             "under1Minute": 18228,
+             "from1To5Minutes": 2956,
+             "from5To10Minutes": 1267,
+             "from10To20Minutes": 1497,
+             "from20To40Minutes": 1543,
+             "from40To60Minutes": 657,
+             "from60To90Minutes": 561,
+             "from90To120Minutes": 340,
+             "from2To3Hours": 429,
+             "from3To4Hours": 167,
+             "from4To6Hours": 170,
+             "over6Hours": 154
+             }]; */
+
+            // Tạo dữ liệu
+            for (var i = 0; i < data.length; i++) {
+                var ageNames = d3.keys(data[i]).filter(function (key) {
+                    return key !== "date";
+                });
+            }
+
+
+            data.forEach(function (d) {
+                d.items = ageNames.map(function (name) {
+                    return {
+                        name: name, // ngày
+                        value: +d[name] // số lượng ngừoi
+                    };
+                });
+            });
+
+            // trat về dữ liệu ngày dưới cột x
+            x0.domain(data.map(function (d) {
+                return d.date;
+            }));
+            x1.domain(ageNames).rangeRoundBands([0, x0.rangeBand()]);
+
+
+            // hiển thị dữ liệu ngày dưới cột y
+            y.domain([0, d3.max(data, function (d) {
+                return d3.max(d.items, function (d) {
+                    return d.value;
+                });
+            })]);
+
+
+            //making the x axis/y axis
+
+            var xg = svg.append("g")
+                    .attr("class", "x axis")
+                    .attr("transform", "translate(0," + height + ")")
+                    .call(xAxis);
+
+            var yg = svg.append("g")
+                    .attr("class", "y axis")
+                    .call(yAxis);
+
+            yg.append("text")
+                    .attr("transform", "rotate(-90)")
+                    .attr("y", 6)
+                    .attr("dy", ".71em")
+                    .style("text-anchor", "end")
+                    .text("number visitor");
+
+            var tip = d3.tip()
+                    .attr('class', 'd3-tip')
+                    .offset([-10, 0])
+                    .html(function (d) {
+                        return "<strong></strong> <span style='color:black'>" + d.name + "<br>" + d.value + "</span>";
+                    })
+            svg.call(tip);
+            //xg.call(xAxis);
+            //yg.call(yAxis);
+
+
+            //removing all the rectangles
+            svg.selectAll(".TestSuite").remove();
+
+            var state = svg.selectAll(".TestSuite")
+                    .data(data)
+                    .enter().append("g")
+                    .attr("class", "TestSuite")
+                    .attr("transform", function (d) {
+                        return "translate(" + x0(d.date) + ",0)";
+                    })
+
+
+            state.selectAll("rect")
+                    .data(function (d) {
+                        return d.items;
+                    })
+                    .enter().append("rect")
+                    .attr("width", x1.rangeBand())
+                    .attr("x", function (d) {
+                        return x1(d.name);
+                    })
+                    .attr("y", function (d) {
+                        return y(d.value);
+                    })
+                    .attr("height", function (d) {
+                        return height - y(d.value);
+                    })
+                    .style("fill", function (d) {
+                        return color(d.name);
+                    })
+                    .on('mouseover', tip.show)
+                    .on('mouseout', tip.hide);
+
+
+        }
+    </script>
+    <script
+            language="javascript">
+
+        function load_ajax() {
+            $.ajax({
+                url: "{{ url_for('ajax_duration') }}",
+                type: "POST",
+                data: JSON.stringify(
+                        {
+                            'startTime': $('#start_time').val(),
+                            'endTime': $('#end_time').val(),
+                            'resolution': $('#resolution').val(),
+                            'region': $('#region').val(),
+                            'charType': $('#charType').val(),
+                        }, null, '\t'),
+                contentType: 'application/json;charset=UTF-8',
+                dataType: 'json',
+                success: function (result) {
+                    console.log(result);
+                    // Xóa hình ảnh trước,
+                    document.getElementById("visualize").innerHTML = "";
+
+                    // lay du lieu tu server
+                    // var resolution = result.resolution;
+                    var dataContent = result.data;
+                    var region = result.region;
+                    var charType = result.charType;
+
+                    duration(dataContent);
+                    /*
+                     if (region != 0) {
+                     oneRegion(dataContent, resolution, charType);
+                     }
+                     else {
+                     allRegion(dataContent, resolution);
+                     }
+                     */
+                }
+            });
+        }
+    </script>
+
+    <div class="content">
+        {#    Hiển thị 2 thanh chọn ngaỳ tháng#}
+
+        <div class="row">
+
+            <div class="col-sm-1"></div>
+            <div class="col-sm-2" style="margin-right: 40px">
+                <div id="datetimepicker_start" class="input-append date">
+                    <h5>Time Start</h5>
+                    <input type="text" id="start_time" class="form-control" name="startTime"
+                           style="height: 34px"></input>
+                    <span class="add-on" style="height: 34px">
+                    <i data-time-icon="icon-time" data-date-icon="icon-calendar"></i>
+                </span>
+                </div>
+            </div>
+            <div class="col-sm-2" style="margin-right: 40px">
+                <div id="datetimepicker_end" class="input-append date">
+                    <h5>End Time</h5>
+                    <input type="text" id="end_time" class="form-control" name="endTime" style="height: 34px"> </input>
+                    <span class="add-on" style="height: 34px">
+                    <i data-time-icon="icon-time" data-date-icon="icon-calendar"></i>
+                </span>
+                </div>
+            </div>
+
+
+            <div class="col-sm-2">
+                <h5>Region</h5>
+                <select class="form-control" id="region" name="region">
+                    <option value="1">HUST 1</option>
+                    <option value="2">HUST 2</option>
+                    <option value="3">HUST 3</option>
+                    <option value="4">HUST 4</option>
+                    <option value="0">Tất cả</option>
+
+                </select>
+            </div>
+
+            <div class="col-sm-2" align="center">
+                <h5></h5><br>
+                <button class="btn-primary" onclick="load_ajax()"; style="width: 100%; height: 34px">Hiển thị</button>
+            </div>
+            <div class="col-sm-1"></div>
+
+        </div>
+
+
+
+        <script type="text/javascript">
+            $('#datetimepicker_start').datetimepicker({
+                format: 'dd/MM/yyyy hh:mm:ss',
+                language: 'pt-BR'
+            });
+
+            $('#datetimepicker_end').datetimepicker({
+                format: 'dd/MM/yyyy hh:mm:ss',
+                language: 'pt-BR'
+            });
+        </script>
+
+        {#    Hiển thị biểu đồ#}
+        <div class="visualize" id="visualize">
+
+        </div>
+
+    </div>
+{% endblock %}
+

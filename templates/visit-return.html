@@ -1,0 +1,1298 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <style>
+        .checkbox {
+            padding-left: 20px;
+        }
+
+        .checkbox label {
+            display: inline-block;
+            vertical-align: middle;
+            position: relative;
+            padding-left: 5px;
+        }
+
+        .checkbox label::before {
+            content: "";
+            display: inline-block;
+            position: absolute;
+            width: 17px;
+            height: 17px;
+            left: 0;
+            margin-left: -20px;
+            border: 1px solid #cccccc;
+            border-radius: 3px;
+            background-color: #fff;
+            -webkit-transition: border 0.15s ease-in-out, color 0.15s ease-in-out;
+            -o-transition: border 0.15s ease-in-out, color 0.15s ease-in-out;
+            transition: border 0.15s ease-in-out, color 0.15s ease-in-out;
+        }
+
+        .checkbox label::after {
+            display: inline-block;
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            left: 0;
+            top: 0;
+            margin-left: -20px;
+            padding-left: 3px;
+            padding-top: 1px;
+            font-size: 11px;
+            color: #555555;
+        }
+
+        .checkbox input[type="checkbox"],
+        .checkbox input[type="radio"] {
+            opacity: 0;
+            z-index: 1;
+        }
+
+        .checkbox input[type="checkbox"]:focus + label::before,
+        .checkbox input[type="radio"]:focus + label::before {
+            outline: thin dotted;
+            outline: 5px auto -webkit-focus-ring-color;
+            outline-offset: -2px;
+        }
+
+        .checkbox input[type="checkbox"]:checked + label::after,
+        .checkbox input[type="radio"]:checked + label::after {
+            font-family: "FontAwesome";
+            content: "\f00c";
+        }
+
+        .checkbox input[type="checkbox"]:indeterminate + label::after,
+        .checkbox input[type="radio"]:indeterminate + label::after {
+            display: block;
+            content: "";
+            width: 10px;
+            height: 3px;
+            background-color: #555555;
+            border-radius: 2px;
+            margin-left: -16.5px;
+            margin-top: 7px;
+        }
+
+        .checkbox input[type="checkbox"]:disabled + label,
+        .checkbox input[type="radio"]:disabled + label {
+            opacity: 0.65;
+        }
+
+        .checkbox input[type="checkbox"]:disabled + label::before,
+        .checkbox input[type="radio"]:disabled + label::before {
+            background-color: #eeeeee;
+            cursor: not-allowed;
+        }
+
+        .checkbox.checkbox-circle label::before {
+            border-radius: 50%;
+        }
+
+        .checkbox.checkbox-inline {
+            margin-top: 0;
+        }
+
+        .checkbox-primary input[type="checkbox"]:checked + label::before,
+        .checkbox-primary input[type="radio"]:checked + label::before {
+            background-color: #337ab7;
+            border-color: #337ab7;
+        }
+
+        .checkbox-primary input[type="checkbox"]:checked + label::after,
+        .checkbox-primary input[type="radio"]:checked + label::after {
+            color: #fff;
+        }
+
+        /*.checkbox-danger input[type="checkbox"]:checked + label::before,*/
+        /*.checkbox-danger input[type="radio"]:checked + label::before {*/
+        /*background-color: #d9534f;*/
+        /*border-color: #d9534f; }*/
+        /*.checkbox-danger input[type="checkbox"]:checked + label::after,*/
+        /*.checkbox-danger input[type="radio"]:checked + label::after {*/
+        /*color: #fff; }*/
+
+        /*.checkbox-info input[type="checkbox"]:checked + label::before,*/
+        /*.checkbox-info input[type="radio"]:checked + label::before {*/
+        /*background-color: #5bc0de;*/
+        /*border-color: #5bc0de; }*/
+        /*.checkbox-info input[type="checkbox"]:checked + label::after,*/
+        /*.checkbox-info input[type="radio"]:checked + label::after {*/
+        /*color: #fff; }*/
+
+        /*.checkbox-warning input[type="checkbox"]:checked + label::before,*/
+        /*.checkbox-warning input[type="radio"]:checked + label::before {*/
+        /*background-color: #f0ad4e;*/
+        /*border-color: #f0ad4e; }*/
+        /*.checkbox-warning input[type="checkbox"]:checked + label::after,*/
+        /*.checkbox-warning input[type="radio"]:checked + label::after {*/
+        /*color: #fff; }*/
+
+        /*.checkbox-success input[type="checkbox"]:checked + label::before,*/
+        /*.checkbox-success input[type="radio"]:checked + label::before {*/
+        /*background-color: #5cb85c;*/
+        /*border-color: #5cb85c; }*/
+        /*.checkbox-success input[type="checkbox"]:checked + label::after,*/
+        /*.checkbox-success input[type="radio"]:checked + label::after {*/
+        /*color: #fff;}*/
+
+        .checkbox-primary input[type="checkbox"]:indeterminate + label::before,
+        .checkbox-primary input[type="radio"]:indeterminate + label::before {
+            background-color: #337ab7;
+            border-color: #337ab7;
+        }
+
+        .checkbox-primary input[type="checkbox"]:indeterminate + label::after,
+        .checkbox-primary input[type="radio"]:indeterminate + label::after {
+            background-color: #fff;
+        }
+
+        /*.checkbox-danger input[type="checkbox"]:indeterminate + label::before,*/
+        /*.checkbox-danger input[type="radio"]:indeterminate + label::before {*/
+        /*background-color: #d9534f;*/
+        /*border-color: #d9534f;*/
+        /*}*/
+
+        /*.checkbox-danger input[type="checkbox"]:indeterminate + label::after,*/
+        /*.checkbox-danger input[type="radio"]:indeterminate + label::after {*/
+        /*background-color: #fff;*/
+        /*}*/
+
+        /*.checkbox-info input[type="checkbox"]:indeterminate + label::before,*/
+        /*.checkbox-info input[type="radio"]:indeterminate + label::before {*/
+        /*background-color: #5bc0de;*/
+        /*border-color: #5bc0de;*/
+        /*}*/
+
+        /*.checkbox-info input[type="checkbox"]:indeterminate + label::after,*/
+        /*.checkbox-info input[type="radio"]:indeterminate + label::after {*/
+        /*background-color: #fff;*/
+        /*}*/
+
+        /*.checkbox-warning input[type="checkbox"]:indeterminate + label::before,*/
+        /*.checkbox-warning input[type="radio"]:indeterminate + label::before {*/
+        /*background-color: #f0ad4e;*/
+        /*border-color: #f0ad4e;*/
+        /*}*/
+
+        /*.checkbox-warning input[type="checkbox"]:indeterminate + label::after,*/
+        /*.checkbox-warning input[type="radio"]:indeterminate + label::after {*/
+        /*background-color: #fff;*/
+        /*}*/
+
+        /*.checkbox-success input[type="checkbox"]:indeterminate + label::before,*/
+        /*.checkbox-success input[type="radio"]:indeterminate + label::before {*/
+        /*background-color: #5cb85c;*/
+        /*border-color: #5cb85c;*/
+        /*}*/
+
+        /*.checkbox-success input[type="checkbox"]:indeterminate + label::after,*/
+        /*.checkbox-success input[type="radio"]:indeterminate + label::after {*/
+        /*background-color: #fff;*/
+        /*}*/
+
+    </style>
+
+    <style>
+        #favorite-content {
+            position: absolute;
+            width: 98%;
+            height: 98%;
+        }
+
+        svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .stat text,
+        .axis text {
+            font: 9px sans-serif;
+        }
+
+        .axis path,
+        .axis line {
+            fill: none;
+            stroke: #000;
+            shape-rendering: crispEdges;
+        }
+
+        .focus-path,
+        .context-path {
+            fill: none;
+            stroke: steelblue;
+            stroke-width: 1.5px;
+            clip-path: url(#clip);
+        }
+
+        .focus-line {
+            stroke-dasharray: 3, 3;
+            stroke-width: 2;
+        }
+
+        .brush .extent {
+            stroke: #fff;
+            fill-opacity: .125;
+            shape-rendering: crispEdges;
+        }
+
+        rect.pane {
+            cursor: move;
+            fill: none;
+            pointer-events: all;
+        }
+
+        .btn span.glyphicon {
+            opacity: 0;
+        }
+
+        .btn.active span.glyphicon {
+            opacity: 1;
+        }
+
+
+    </style>
+    <script>
+
+        function oneRegion(dataContent, resolution, charType) {
+
+            // Có 4 mảng dữ liệu
+            var jsonObject = JSON.parse(dataContent).data;
+            var data_visit = []
+            var data_return = []
+            var data = []; // sau khi chuẩn hóa
+            console.log(jsonObject.length)
+
+
+            // Lấy mỗi array các phần tử thôi
+            //            data_visit = (JSON.parse(dataContent).data[0]).HUST1;
+
+            //           data_return = (JSON.parse(dataContent).data[0]).HUST1;
+
+
+            //console.log(data)
+
+            var parseDate;
+            var eachItem;
+            var step; // Khoang cach hien thi vach o chieu x
+            if (resolution == "hours") {
+                parseDate = d3.time.format("%Y-%m-%dT%H:%M:%S").parse;
+                formatDate = d3.time.format("%H:%M-%d/%m/%Y");
+                eachItem = 5;
+                step = 12; // Hien thi gio theo kieu 0:3:6:9
+
+            } else {
+                parseDate = d3.time.format("%Y-%m-%d").parse;
+                formatDate = d3.time.format("%d/%m/%Y")
+                eachItem = 80;
+                step = 1; // Luon hien thi ngay
+            }
+
+            // Lâý tất cả cả ngày
+            console.log(jsonObject)
+            console.log(jsonObject[0].HUST[0].date)
+
+
+            for (var i = 0; i < jsonObject.length; i++) {
+                data_visit.push(jsonObject[i].HUST);
+                //data_return.push(jsonObject[i].HUST);
+            }
+
+
+            for (var i = 0; i < numberHust; i++) {
+                jsonObject[i].forEach(function (d) {
+                    d.date = parseDate(d.date);
+                    //d.value = +d.numVisitors;
+                });
+            }
+
+
+            var svg = null;
+            var isCreateSvg = new Boolean(false);
+            var numberHust = jsonObject.length;
+            color = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728"]
+
+            // Thực hiện tìm ngày nhỏ nhất và lớn nhất trong các hust
+            min_day_list = new Date(jsonObject[0].HUST[0].date);
+
+            latest_day_list = new Date(jsonObject[0].HUST[jsonObject[0].HUST.length - 1].date);
+
+            console.log(min_day_list)
+            console.log(latest_day_list)
+
+            for (var i = 0; i < numberHust; i++) {
+                minDay = new Date(jsonObject[i].HUST[0].date);
+                maxDay = new Date(jsonObject[i].HUST[jsonObject[i].HUST.length - 1].date);
+                if (minDay < min_day_list) {
+                    min_day_list = minDay;
+                }
+
+                if (maxDay > latest_day_list) {
+                    latest_day_list = maxDay;
+                }
+            }
+
+            console.log(min_day_list)
+            console.log(latest_day_list)
+
+
+            // TODO Danh sách các Hust phải lấy từ server => Sẽ chỉnh sửa
+            position = [];
+            listHusts = [];
+            values = [];
+            for (i = 0; i < numberHust; i++) {
+                position[i] = 0;
+                listHusts[i] = "HUST" + i;
+            }
+            console.log(listHusts)
+            dayItori = new Date();
+
+            dayItori = min_day_list
+
+            while (dayItori <= latest_day_list) {
+                console.log(dayItori)
+                for (i = 0; i < jsonObject.length; i++) {
+                    if (position[i] < jsonObject[i].HUST.length && dayItori <= new Date(jsonObject[i].HUST[position[i]].date)) {
+                        // Nếu trong hust này có dữ liệu của ngày dayItori
+                        values[i] = jsonObject[i].HUST[position[i]].numVisitors;
+                        position[i]++;
+
+                    } else {
+                        // Nếu không có ""
+                        values[i] = "";
+                    }
+                }
+                item = {}
+                // item["date"] = d3.time.day.round(new Date(dayItori.getDate()));
+
+
+                if (resolution == "hours") {
+                    item["date"] = d3.time.hour.round(dayItori)
+                    //item["date"] = d3.time.day.round(dayItori)
+                    console.log(resolution)
+                    dayItori.setHours(dayItori.getHours() + 1)
+                }
+                else {
+
+                    item["date"] = d3.time.day.round(dayItori)
+
+                    console.log(resolution)
+                    dayItori.setDate(dayItori.getDate() + 1)
+                }
+
+                for (j = 0; j < numberHust; j++) {
+                    item[listHusts[j]] = values[j]
+                }
+                data.push(item);
+            }
+
+            console.log(data)
+
+
+            /*
+             * Dummy data
+             */
+            /*       .
+             var data = [];
+             var count = 600;
+             while (count > 0) {
+             data.push({
+             friends: Math.round(Math.random() * 100),
+             enemies: Math.round(Math.random() * 100),
+             date: d3.time.day.round(new Date(new Date().setDate(new Date().getDate() - count)))
+             });
+             count--;
+             }
+             */
+            // Danh sách các HUST
+            // listHusts = ['friends', 'enemies'];
+
+            console.log(data);
+
+
+            widthDiv = document.getElementById('visualize-visit').clientWidth;
+            heightDiv = document.getElementById('visualize-visit').clientHeight;
+
+            //var $svg = $('#favorite-content'),
+            margin = {top: 30, right: 150, bottom: 74, left: 45},
+                    margin2 = {top: 30, right: 150, bottom: 15, left: 45},
+
+                    // 80%
+                    position = {x: margin.top, y: margin.left}
+
+
+            // 20%
+            position2 = {x: margin.top + 8 / 10 * heightDiv, y: margin.left}
+            width = widthDiv - margin.right - margin.left,
+                    height = 8 / 10 * heightDiv - margin.top - margin.bottom,
+                    height2 = 2 / 10 * heightDiv - margin2.top - margin2.bottom;
+            var svg = d3.select("#visualize-visit").append("svg:svg")
+                    .attr("width", widthDiv)
+                    .attr("height", heightDiv);
+            var color = d3.scale.category10()
+                    .domain(d3.keys(data[0]).filter(function (key) {
+                        return key !== 'date';
+                    }));
+
+            var bisectDate = d3.bisector(function (d) {
+                return d.date;
+            }).left;
+
+
+            /**
+             * Chuẩn hóa lại dữ liệu thành các đối tượng theo dạng
+             * name, value, visiable
+             * @type {any}
+             */
+            var stats = color.domain().map(function (name) {
+                return {
+                    name: name,
+                    values: data.map(function (d) {
+                        return {date: d.date, stat: d[name]};
+                    }),
+                    visible: true /*  thuộc tính này nếu true thì hiển thị, ngược lại*/
+                };
+            });
+
+            console.log(stats)
+
+            /*
+             * Scales
+             */
+
+            var x = d3.time.scale()
+                    .range([0, width])
+                    .domain([data[0].date, data[data.length - 1].date]);
+
+            var x2 = d3.time.scale()
+                    .range([0, width])
+                    .domain(x.domain());
+
+            var y = d3.scale.linear()
+                    .range([height, 0])
+                    .domain([
+                        d3.min(stats, function (s) {
+                            return d3.min(s.values, function (v) {
+                                return v.stat;
+                            });
+                        }),
+                        d3.max(stats, function (s) {
+                            return d3.max(s.values, function (v) {
+                                return v.stat;
+                            });
+                        }),
+                    ]);
+
+            var y2 = d3.scale.linear()
+                    .range([height2, 0])
+                    .domain(y.domain());
+
+            /*
+             * Axises
+             */
+
+            var xAxis = d3.svg.axis()
+                    .scale(x)
+                    .orient('bottom')
+                    .ticks(3);
+
+            var xAxis2 = d3.svg.axis()
+                    .scale(x2)
+                    .orient('bottom')
+                    .ticks(3);
+
+            var yAxis = d3.svg.axis()
+                    .scale(y)
+                    .orient('left');
+
+            /*
+             * Brush and Zoom
+             */
+
+            var brush = d3.svg.brush()
+                    .x(x2)
+                    .on('brush', brushed);
+
+            var zoom = d3.behavior.zoom()
+                    .on('zoom', draw)
+                    .x(x);
+
+            zoom.x(x);
+
+            /*
+             * Focus/Context lines
+             */
+
+            var line = d3.svg.line()
+                    .x(function (d) {
+                        return x(d.date);
+                    })
+                    .y(function (d) {
+                        return y(d.stat);
+                    });
+
+            var line2 = d3.svg.line()
+                    .interpolate('basis')
+                    .x(function (d) {
+                        return x2(d.date);
+                    })
+                    .y(function (d) {
+                        return y2(d.stat);
+                    });
+
+            svg.append('defs').append('clipPath')
+                    .attr('id', 'clip')
+                    .append('rect')
+                    .attr('width', width)
+                    .attr('height', height);
+
+
+            /* Đồ thị lớn hiển thị phía trên */
+            var focus = svg.append('g')
+                    .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+            /*  Đồ thị nhỏ  hiển thị ở dưới*/
+            var context = svg.append('g')
+                    .attr('transform', 'translate(' + position2.y + ',' + position2.x + ')');
+
+            // Thệm cột Ox, Oy cho đồ thị lớn
+            focus.append('g')
+                    .attr('class', 'x axis')
+                    .attr('transform', 'translate(0,' + height + ')')
+                    .call(xAxis);
+
+            focus.append('g')
+                    .attr('class', 'y axis')
+                    .call(yAxis)
+                    .append('text')
+                    .attr('transform', 'rotate(-90)')
+                    .attr('y', 0 - margin.left)
+                    .attr('x', 0 - (height / 2))
+                    .attr('dy', '.71em')
+                    .attr('text-anchor', 'middle')
+                    .attr('Active Users');
+
+            // THêm cột Ox cho đồ thị nhỏ
+            context.append('g')
+                    .attr('class', 'x axis')
+                    .attr('transform', 'translate(0,' + height2 + ')')
+                    .call(xAxis2);
+
+            // Đây là khoảng cach hiển thị giữa các vị trí của tên HUST
+            // Trên cùng là ngày, tiếp tục là HUST 1, HUST ...
+            var spaceName = height / (stats.length );
+
+            // Hiển thị các đường vẽ dữ liệu
+            var focusStat = focus.selectAll('.favorite-stat')
+                    .data(stats)
+                    .enter().append('g')
+                    .attr('class', 'stat');
+
+
+            // Hiện thị tên & giá trị của các hust khi hove
+            // Giá trị
+            var hustValues = focus.selectAll('.value-point')
+                    .data(listHusts)
+                    .enter().append("g")
+                    .attr("class", "focus");
+            hustValues.append("text")
+                    .attr("x", width + (margin.right / 3) - 50)
+                    .attr("y", function (d, i) {
+                        return spaceName * (i + 1);
+                    })
+
+            // Tên
+            var hustName = focus.selectAll('.name-point')
+                    .data(listHusts)
+                    .enter().append("g")
+                    .attr("class", "focus");
+            hustName.append("text")
+                    .attr("x", width + margin.right / 3)
+                    .attr("y", function (d, i) {
+                        return spaceName * (i + 1);
+                    })
+                    .text(function (name) {
+                        return name
+                    });
+
+            // HoverDate hiển thị ngày trên góc đồ thị khi hover chuột vào
+            var hoverDate = svg.append("g")
+                    .attr("class", "hover-line");
+            var hoverDate = hoverDate
+                    .append('text')
+                    .attr("class", "hover-text")
+                    .attr("y", spaceName)
+                    .attr("x", width + (margin.right / 3))
+            /*---------     Thực hiện vẽ các đường     -------------*/
+            // Path là đường hiển thị dữ liệu
+            focusStat.append('path')
+                    .attr('class', 'focus-path')
+                    .attr("id", function (d) {
+                        return "line-" + d.name.replace(" ", "").replace("/", "");
+                    })
+                    .attr("d", function (d) {
+                        return d.visible ? line(d.values) : null;
+                    })
+                    .style('stroke', function (d) {
+                        return color(d.name);
+                    })
+
+            hustCircle = focusStat.append('circle')
+                    .attr('opacity', 0)
+                    .attr('r', 4)
+                    .attr('fill', function (d) {
+                        return color(d.name);
+                    })
+            hustXLine = focusStat.append('line')
+                    .attr('class', 'focus-line')
+                    .style('stroke', function (d) {
+                        return color(d.name);
+                    })
+                    .style('stroke-width', function (d) {
+                        return d.visible ? 2 : 0;
+                    })
+                    .attr('opacity', 1);
+
+            hustYLine = focusStat.append('line')
+                    .attr('class', 'focus-line')
+                    .style('stroke', function (d) {
+                        return color(d.name);
+                    })
+                    .style('stroke-width', function (d) {
+                        return d.visible ? 2 : 0;
+                    })
+                    .attr('opacity', 1);
+
+
+            {#            label = focusStat.append("foreignObject")#}
+            {#                    .attr("x", width + (margin.right / 3) - 15)#}
+            {#                    .attr('y', function (d, i) {#}
+            {#                        return spaceName * (i + 1) - 10;#}
+            {#                    })#}
+            {#                    .html(function (d, i) {#}
+            {#                        return '<div class="checkbox checkbox-primary"> ' +#}
+            {#                                '<input id="checkbox'#}
+            {#                                + i + '"' + 'class="styled" type="checkbox" checked> ' +#}
+            {#                                '<label>' +#}
+            {#                                '</label> ' +#}
+            {#                                '</div>'#}
+            {#                    })#}
+            {#                    .on("click", function (d, i) {#}
+            {#                        document.getElementById("checkbox" + i).checked = !d.visible#}
+            {##}
+            {#                        d.visible = !d.visible;#}
+            {#                        draw()#}
+
+            {#                        document.getElementById("checkbox0").checked = d.visible;#}
+            {#                        focusStat.select("glyphicon")#}
+            {#                                .attr('opacity', 0)#}
+            {#                    })#}
+            // spacing
+
+
+            // Hiển thị hình vuông các màu
+            focusStat.append("rect")
+                    .attr("width", 10)
+                    .attr("height", 10)
+                    .attr("x", width + (margin.right / 3) - 15)
+                    .attr("y", function (d, i) {
+                        return spaceName * (i + 1) - 10;
+                    })  // spacing
+                    .attr("fill", function (d) {
+                        console.log(color(d.name))
+                        return d.visible ? color(d.name) : "#F1F1F2";
+                    })
+                    .attr("class", "legend-box")
+
+                    .on("click", function (d) {
+                        d.visible = !d.visible;
+
+                        maxY = findMaxY(stats);
+                        y.domain([0, maxY]);
+                        svg.select(".y.axis")
+                                .transition()
+                                .call(yAxis);
+
+                        // Không hiển thị path nữa nếu visiable = false;
+                        focusStat.select("path")
+                                .transition()
+                                .attr("d", function (d) {
+                                    return d.visible ? line(d.values) : null;
+                                })
+
+                        // Không hiển thị vòng tròn (cho bán kính về = 0)
+                        focusStat.select("circle")
+                                .transition()
+                                .attr("r", function (d) {
+                                    return d.visible ? 4 : 0;
+                                })
+
+                        // Không hiển thị đường nét đứt
+                        focusStat.selectAll("line")
+                                .transition()
+                                .style("stroke-width", function (d) {
+                                    return d.visible ? 2 : 0;
+                                })
+
+                        // Chuyển đổi màu của hình vuông
+                        focusStat.select("rect")
+                                .transition()
+                                .attr("fill", function (d) {
+                                    return d.visible ? color(d.name) : "#F1F1F2";
+                                })
+
+                    })
+
+                    .on("mouseover", function (d) {
+
+                        d3.select(this)
+                                .transition()
+                                .attr("fill", function (d) {
+                                    return color(d.name);
+                                });
+
+                        d3.select("#line-" + d.name.replace(" ", "").replace("/", ""))
+                                .transition()
+                                .style("stroke-width", 2.5);
+
+                    })
+
+                    .on("mouseout", function (d) {
+
+                        d3.select(this)
+                                .transition()
+                                .attr("fill", function (d) {
+                                    return d.visible ? color(d.name) : "#F1F1F2";
+                                });
+
+
+                        d3.select("#line-" + d.name.replace(" ", "").replace("/", ""))
+                                .transition()
+                                .style("stroke-width", 1.5);
+
+                    })
+
+            //  Them cycle
+            focusStat.append('circle')
+                    .attr('opacity', 0)
+                    .attr('r', 100)
+                    .attr("x", width - 15)
+                    .attr("y", height - 15)
+                    .attr('fill', function (d) {
+                        return color(d.name);
+                    })
+
+            console.log(stats);
+            /*
+             Tất cả các sự kiện liên quan đến đồ thì lớn
+             */
+            var focusRect = focus.append('rect')
+                    .attr('width', width)
+                    .attr('height', height)
+                    .attr('class', 'pane')
+                    .on('mouseover', function () {
+                        hustXLine.attr('opacity', 0.5);
+                        hustYLine.attr('opacity', 0.5);
+
+                        hustCircle.attr('opacity', 1);
+                        hustValues.attr('opacity', 1);
+                        hoverDate.attr('opacity', 1);
+
+                    })
+                    .on('mouseout', function () {
+                        hustXLine.attr('opacity', 0);
+                        hustYLine.attr('opacity', 0);
+
+                        hustCircle.attr('opacity', 0);
+                        hustValues.attr('opacity', 0);
+                        hoverDate.attr('opacity', 0);
+                    })
+                    .on('mousemove', mouseMove)
+            //.call(zoom);
+
+            var contextStat = context.selectAll('.context-stat')
+                    .data(stats)
+                    .enter().append('g')
+                    .attr('class', 'stat');
+
+            contextStat.append('path')
+                    .attr('class', 'context-path')
+                    .attr('d', function (d) {
+                        return line2(d.values);
+                    })
+                    .style('stroke', function (d) {
+                        return color(d.name);
+                    });
+
+            context.append('g')
+                    .attr('class', 'x brush')
+                    .call(brush)
+                    .selectAll('rect')
+                    .attr('y', -6)
+                    .attr('height', height2 + 7);
+
+            /*
+             Thực hiện vẽ lại
+             */
+            function draw() {
+                focus.selectAll('.focus-path').attr('d', function (d) {
+                    return d.visible ? line(d.values) : null;
+                });
+
+                focus.selectAll('.context-path').attr('d', function (d) {
+                    return line2(d.values);
+                });
+
+                // Không hiển thị vòng tròn (cho bán kính về = 0)
+                focusStat.select("circle")
+                        .transition()
+                        .attr("r", function (d) {
+                            return d.visible ? 4 : 0;
+                        })
+
+                // Không hiển thị đường nét đứt, cho độ dày của đường = 0
+                focusStat.selectAll("line")
+                        .transition()
+                        .style("stroke-width", function (d) {
+                            return d.visible ? 2 : 0;
+                        })
+
+                // Chuyển đổi màu của hình vuông
+                focusStat.select("rect")
+                        .transition()
+                        .attr("fill", function (d) {
+                            return d.visible ? color(d.name) : "#F1F1F2";
+                        })
+
+
+                focus.select('.x.axis').call(xAxis);
+                brush.extent(x.domain());
+                svg.select('.brush').call(brush);
+            }
+
+            function brushed() {
+
+                x.domain(brush.empty() ? x2.domain() : brush.extent());
+
+                // Vẽ lại ở bản đồ phía trên
+                focus.selectAll('.focus-path').attr('d', function (d) {
+
+                    return d.visible ? line(d.values) : null;
+                });
+
+                focus.select('.x.axis').call(xAxis);
+                zoom.x(x);
+            }
+
+
+            /**
+             * Khi chuột di chuyển
+             * - mình sẽ xác định đang ở ngày nào
+             * - Và giá trị cửa từng path
+             * - Thay đổi vị trị các circle
+             */
+            function mouseMove() {
+                // Cập nhật vị trí
+                var mouse_x = d3.mouse(this)[0]; // vị trí con chuột
+                var date = x.invert(mouse_x); // lấy ra ngày
+
+                if (resolution == "hours") {
+
+                    var x0 = d3.time.hour.round(date),
+                            i = bisectDate(data, x0, 1);
+
+                }
+                else {
+                    var x0 = d3.time.day.round(date),
+                            i = bisectDate(data, x0, 1);
+                }
+
+                // hoverDate.text(date);
+                d0 = data[i - 1],
+                        d1 = data[i],
+                        d = x0 - d0.date > d1.date - x0 ? d1 : d0;
+
+                hoverDate.text(formatDate(d.date));
+                hustValues.select("text").text(
+                        function (hustName) {
+                            return d[hustName]
+                        })
+
+
+                hustCircle.transition()
+                        .duration(300)
+                        .delay(10)
+                        .ease('bounce')
+                        .attr('cx', x(x0))
+                        .attr('cy', function (d) {
+                            return y(d.values[i].stat);
+                        })
+
+                hustXLine.transition()
+                        .duration(300)
+                        .delay(10)
+                        .ease('bounce')
+                        .attr('x1', 0)
+                        .attr('x2', x(x0))
+                        .attr('y1', function (d) {
+                            return y(d.values[i].stat);
+                        })
+                        .attr('y2', function (d) {
+                            return y(d.values[i].stat);
+                        });
+
+                hustYLine.transition()
+                        .duration(333)
+                        .delay(10)
+                        .ease('bounce')
+                        .attr('x1', x(x0))
+                        .attr('x2', x(x0))
+                        .attr('y1', height)
+                        .attr('y2', function (d) {
+                            return y(d.values[i].stat);
+                        });
+
+            }
+
+            /*
+             Tim gia tri max cua y,dung trong domain
+             */
+            function findMaxY(data) {
+                var maxYValues = data.map(function (d) {
+                    if (d.visible) {
+                        return d3.max(d.values, function (value) {
+                            return value.stat;
+                        })
+                    }
+                });
+                return d3.max(maxYValues);
+            }
+        }
+
+    </script>
+
+    <script
+            language="javascript">
+
+        function load_ajax() {
+            $.ajax({
+                url: "{{ url_for('ajax_visit_return') }}",
+                type: "POST",
+                data: JSON.stringify(
+                        {
+                            'startTime': $('#start_time').val(),
+                            'endTime': $('#end_time').val(),
+                            'resolution': $('#resolution').val(),
+                            'region': $('#region').val(),
+                            'charType': $('#charType').val(),
+                        }, null, '\t'),
+                contentType: 'application/json;charset=UTF-8',
+                dataType: 'json',
+                success: function (result) {
+                    console.log(result);
+                    // Xóa hình ảnh trước,
+                    document.getElementById("visualize-visit").innerHTML = "";
+                    //document.getElementById("visualize-return").innerHTML = "";
+
+
+                    // lay du lieu tu server
+                    var resolution = result.resolution;
+                    var dataContent = result.data;
+                    var region = result.region;
+                    var charType = result.charType;
+                    var startTime = result.startTime;
+                    var endTime = result.endTime;
+
+                    console.log(startTime + "start");
+                    console.log(endTime + "end");
+
+                    $("#start_time").val(startTime);
+                    $("#end_time").val(endTime);
+
+                    oneRegion(dataContent, resolution, charType);
+
+                }
+            });
+        }
+
+        $(document).ready(function () {
+            console.log("ready!");
+            load_ajax();
+            //drawPie();
+        });
+    </script>
+    <script>
+
+        function drawPie() {
+            var w = 400;
+            var h = 400;
+            var r = h / 2;
+            var color = d3.scale.category20c();
+
+            var data = [{"label": "Category A", "value": 20},
+                {"label": "Category B", "value": 50},
+                {"label": "Category C", "value": 30},
+                {"label": "Category A", "value": 20},
+                {"label": "Category B", "value": 50},
+                {"label": "Category C", "value": 30},
+                {"label": "Category A", "value": 20},
+                {"label": "Category B", "value": 50},
+                {"label": "Category C", "value": 5}];
+
+
+            var vis = d3.select('body').append("svg:svg").data([data]).attr("width", w).attr("height", h).append("svg:g").attr("transform", "translate(" + r + "," + r + ")");
+            var pie = d3.layout.pie().value(function (d) {
+                return d.value;
+            });
+
+            // declare an arc generator function
+            var arc = d3.svg.arc().outerRadius(r);
+
+            // select paths, use arc generator to draw
+            var arcs = vis.selectAll("g.slice").data(pie).enter().append("svg:g").attr("class", "slice");
+            arcs.append("svg:path")
+                    .attr("fill", function (d, i) {
+                        return color(i);
+                    })
+                    .attr("d", function (d) {
+                        // log the result of the arc generator to show how cool it is :)
+                        console.log(arc(d));
+                        return arc(d);
+                    })
+                    .on("mouseenter", function (d) {
+
+
+                        var endAngle = d.endAngle + 0.2;
+                        var startAngle = d.startAngle - 0.2;
+
+                        var arcOver = d3.svg.arc()
+                                .outerRadius(r + 9).endAngle(endAngle).startAngle(startAngle);
+
+                        d3.select(this)
+                                .attr("stroke", "white")
+                                .transition()
+                                .duration(1000)
+                                .attr("d", arcOver)
+                                .attr("stroke-width", 6);
+                    })
+                    .on("mouseleave", function (d) {
+                        d3.select(this).transition()
+                                .attr("d", arc)
+                                .attr("stroke", "none");
+                    });
+            ;
+
+            var canvas = d3.select('#pie-r')
+                    .append('svg')
+                    .attr({
+                        'width': 650,
+                        'height': 500
+                    });
+
+            var data = [{
+                "label": "one",
+                "value": 40
+            }, {
+                "label": "two",
+                "value": 30
+            }, {
+                "label": "three",
+                "value": 30
+            }];
+
+            var colors = ['red', 'blue'];
+
+            var colorscale = d3.scale.linear().domain([0, data.length]).range(colors);
+
+            var arc = d3.svg.arc()
+                    .innerRadius(0)
+                    .outerRadius(100);
+
+            var arcOver = d3.svg.arc()
+                    .innerRadius(0)
+                    .outerRadius(150 + 10);
+
+            var pie = d3.layout.pie()
+                    .value(function (d) {
+                        return d.value;
+                    });
+
+
+            var renderarcs = canvas.append('g')
+                    .attr('transform', 'translate(440,200)')
+                    .selectAll('.arc')
+                    .data(pie(data))
+                    .enter()
+                    .append('g')
+                    .attr('class', "arc");
+
+            renderarcs.append('path')
+                    .attr('d', arc)
+                    .attr('fill', function (d, i) {
+                        return colorscale(i);
+                    })
+                    .on("mouseover", function (d) {
+                        d3.select(this).transition()
+                                .duration(1000)
+                                .attr("d", arcOver);
+                    })
+                    .on("mouseout", function (d) {
+                        d3.select(this).transition()
+                                .duration(1000)
+                                .attr("d", arc);
+                    });
+
+            renderarcs.append('text')
+                    .attr('transform', function (d) {
+                        var c = arc.centroid(d);
+                        console.log(c);
+                        return "translate(" + c[0] + "," + c[1] + ")";
+                    })
+                    .text(function (d) {
+                        return d.value + "%";
+                    });
+
+        }
+    </script>
+
+    {#    Hiển thị 2 thanh chọn ngaỳ tháng#}
+
+    <section id="feature">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-3 col-sm-12 frame">
+                    <div class="row">
+                        <div class="col-md-12 col-sm-12 wow fadeInDown" data-wow-duration="1000ms"
+                             data-wow-delay="600ms">
+                            <div class="feature-wrap">
+                                <i>Start Time</i>
+
+                                <div id="datetimepicker_start" class="input-append date">
+                                    <input type="text" id="start_time" name="startTime"
+                                           style="height: 34px;width: 54%;">
+
+                                    </input>
+                                    <span class="add-on" style="height: 34px;">
+                                        <i data-time-icon="icon-time" data-date-icon="icon-calendar"
+                                           style="line-height: 34px"></i>
+                                    </span>
+                                </div>
+                            </div>
+                        </div><!--/.col-md-4-->
+
+                        <div class="col-md-12 col-sm-12 wow fadeInDown" data-wow-duration="1000ms"
+                             data-wow-delay="600ms">
+                            <div class="feature-wrap">
+                                <i>End Time</i>
+
+                                <div id="datetimepicker_end" class="input-append date">
+                                    <input type="text" type="text" id="end_time" name="endTime"
+                                           style="height: 34px;width: 54%"> </input>
+                                    <span class="add-on" style="height: 34px">
+                                <i data-time-icon="icon-time" data-date-icon="icon-calendar"
+                                   style="line-height: 34px"></i>
+                            </span>
+
+                                </div>
+                            </div>
+
+                        </div><!--/.col-md-4-->
+
+                        <div class="col-md-12 col-sm-12 wow fadeInDown" data-wow-duration="1000ms"
+                             data-wow-delay="600ms">
+                            <div class="feature-wrap">
+                                <i>Type Time</i>
+                                <div style="float: left;width: calc(54% + 34px)">
+                                    <select class="form-control" id="resolution" name="resolution" ;>
+                                        <option value="days">days</option>
+                                        <option value="hours">hours</option>
+                                    </select>
+
+                                </div>
+                            </div>
+                        </div><!--/.col-md-4-->
+
+
+                        <div class="col-md-12 col-sm-12 wow fadeInDown" data-wow-duration="1000ms"
+                             data-wow-delay="600ms">
+                            <div class="feature-wrap">
+                                <i>Region</i>
+                                <div style="float: left;width: calc(54% + 34px)">
+                                    <select class="form-control" id="region" name="region">
+                                        <option value="1">HUST 1</option>
+                                        <option value="2">HUST 2</option>
+                                        <option value="3">HUST 3</option>
+                                        <option value="4">HUST 4</option>
+                                        <option value="0" selected>All</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div><!--/.col-md-4-->
+
+                        <div class="col-md-12 col-sm-12 wow fadeInDown" data-wow-duration="1000ms"
+                             data-wow-delay="600ms">
+
+                            <div class="feature-wrap">
+                                <i></i>
+                                <div style="float: left; width: calc(54% + 34px)">
+                                    <button class="btn-primary" onclick="load_ajax()"
+                                            style="width:100%;height: 34px;" ;>
+                                        Go
+                                    </button>
+                                </div>
+
+                            </div>
+                        </div>
+
+
+                    </div>
+                </div>
+
+                <div class="col-md-9 col-sm-12 frame">
+                    <div>
+
+
+                    </div>
+
+                    <div class="row">
+                        {#    Hiển thị biểu đồ#}
+                        <div style="height: 500px">
+                            <p style="float: left; width: 10%;line-height: 90%;position: relative;top: 40%;">Visitor
+                                visualization</p>
+                            <div class="frame" style="float:left;height: 90%;width: 90%" id="visualize-visit">
+
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div><!--/.row-->
+
+
+            <div id="pie-return">
+            </div>
+            <div class="container">
+
+
+                <script type="text/javascript">
+                    $('#datetimepicker_start').datetimepicker({
+                        format: 'dd/MM/yyyy hh:mm:ss',
+                        language: 'pt-BR'
+                    });
+
+                    $('#datetimepicker_end').datetimepicker({
+                        format: 'dd/MM/yyyy hh:mm:ss',
+                        language: 'pt-BR'
+                    });
+                </script>
+
+
+            </div>
+    </section>
+{% endblock %}
+

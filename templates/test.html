@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+<style>
+    body {
+        font: 10px sans-serif;
+    }
+
+    .axis path, .axis line {
+        fill: none;
+        stroke: #000;
+        shape-rendering: crispEdges;
+    }
+
+    .bar {
+        fill: steelblue;
+    }
+
+    .x.axis path {
+        display: none;
+    }
+
+    .d3-tip {
+        line-height: 1;
+        font-weight: bold;
+        padding: 12px;
+        background: rgba(0, 0, 0, 0.8);
+        color: #fff;
+        border-radius: 2px;
+    }
+
+    /* Creates a small triangle extender for the tooltip */
+    .d3-tip:after {
+        box-sizing: border-box;
+        display: inline;
+        font-size: 10px;
+        width: 100%;
+        line-height: 1;
+        color: rgba(0, 0, 0, 0.8);
+        content: "\25BC";
+        position: absolute;
+        text-align: center;
+    }
+
+    /* Style northward tooltips differently */
+    .d3-tip.n:after {
+        margin: -1px 0 0 0;
+        top: 100%;
+        left: 0;
+    }
+</style>
+<script src="//d3js.org/d3.v3.min.js"></script>
+<script src="http://labratrevenge.com/d3-tip/javascripts/d3.tip.v0.6.3.js"></script>
+<script>
+
+
+    var margin = {
+                top: 20,
+                right: 20,
+                bottom: 30,
+                left: 40
+            },
+            width = 2000 - margin.left - margin.right,
+            height = 500 - margin.top - margin.bottom;
+
+    var x0 = d3.scale.ordinal()
+            .rangeRoundBands([0, width], .1);
+
+    var x1 = d3.scale.ordinal();
+
+    var y = d3.scale.linear()
+            .range([height, 0]);
+
+    // Màu hiện thị các cột
+    var color = d3.scale.ordinal()
+            .range(["#FF0000", "#FFFF00", "#000000", "#FF00FF",
+                "#FF0000", "#FFFF00", "#000000", "#FF00FF",
+                "#FF0000", "#FFFF00", "#000000", "#FF00FF"]);
+
+    // Cột x
+    var xAxis = d3.svg.axis()
+            .scale(x0)
+            .orient("bottom");
+
+    // Cột y
+    var yAxis = d3.svg.axis()
+            .scale(y)
+            .orient("left")
+            .tickFormat(d3.format(""));
+
+    //with
+    var w = width + margin.left + margin.right;
+    // height
+    var h = height + margin.top + margin.bottom;
+    // Hiển thị
+    var svg = d3.select("body").append("svg")
+            .attr("width", w)
+            .attr("height", h)
+            .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    /*
+     var data = [{
+     TestSuite: "TestSuite1",
+     True: 2,
+     False: 5
+     }, {
+     TestSuite: "TestSuite2",
+     True: 6,
+     False: 3
+     }, {
+     TestSuite: "TestSuite3",
+     True: 1,
+     False: 7
+     }, {
+     TestSuite: "TestSuite4",
+     True: 5,
+     False: 2
+     }, {
+     TestSuite: "TestSuite5",
+     True: 2,
+     False: 2
+     }, {
+     TestSuite: "TestSuite6",
+     True: 9,
+     False: 4
+     }];
+     */
+
+    var data = [{
+        "date": "2016-09-26",
+        "under1Minute": 17095,
+        "from1To5Minutes": 2594,
+        "from5To10Minutes": 1063,
+        "from10To20Minutes": 1265,
+        "from20To40Minutes": 1266,
+        "from40To60Minutes": 450,
+        "from60To90Minutes": 370,
+        "from90To120Minutes": 235,
+        "from2To3Hours": 205,
+        "from3To4Hours": 115,
+        "from4To6Hours": 72,
+        "over6Hours": 101
+    }, {
+        "date": "2016-09-27",
+        "under1Minute": 18228,
+        "from1To5Minutes": 2956,
+        "from5To10Minutes": 1267,
+        "from10To20Minutes": 1497,
+        "from20To40Minutes": 1543,
+        "from40To60Minutes": 657,
+        "from60To90Minutes": 561,
+        "from90To120Minutes": 340,
+        "from2To3Hours": 429,
+        "from3To4Hours": 167,
+        "from4To6Hours": 170,
+        "over6Hours": 154
+    }, {
+        "date": "2016-09-28",
+        "under1Minute": 18093,
+        "from1To5Minutes": 2959,
+        "from5To10Minutes": 1309,
+        "from10To20Minutes": 1507,
+        "from20To40Minutes": 1590,
+        "from40To60Minutes": 666,
+        "from60To90Minutes": 531,
+        "from90To120Minutes": 377,
+        "from2To3Hours": 396,
+        "from3To4Hours": 167,
+        "from4To6Hours": 166,
+        "over6Hours": 137
+    }, {
+        "date": "2016-09-29",
+        "under1Minute": 18082,
+        "from1To5Minutes": 2737,
+        "from5To10Minutes": 1302,
+        "from10To20Minutes": 1521,
+        "from20To40Minutes": 1514,
+        "from40To60Minutes": 602,
+        "from60To90Minutes": 561,
+        "from90To120Minutes": 319,
+        "from2To3Hours": 384,
+        "from3To4Hours": 180,
+        "from4To6Hours": 183,
+        "over6Hours": 139
+    }, {
+        "date": "2016-09-30",
+        "under1Minute": 19121,
+        "from1To5Minutes": 2767,
+        "from5To10Minutes": 1253,
+        "from10To20Minutes": 1517,
+        "from20To40Minutes": 1487,
+        "from40To60Minutes": 635,
+        "from60To90Minutes": 508,
+        "from90To120Minutes": 328,
+        "from2To3Hours": 439,
+        "from3To4Hours": 184,
+        "from4To6Hours": 139,
+        "over6Hours": 130
+    }, {
+        "date": "2016-10-01",
+        "under1Minute": 11658,
+        "from1To5Minutes": 1199,
+        "from5To10Minutes": 487,
+        "from10To20Minutes": 575,
+        "from20To40Minutes": 607,
+        "from40To60Minutes": 241,
+        "from60To90Minutes": 216,
+        "from90To120Minutes": 150,
+        "from2To3Hours": 135,
+        "from3To4Hours": 67,
+        "from4To6Hours": 64,
+        "over6Hours": 69
+    }, {
+        "date": "2016-10-02",
+        "under1Minute": 14576,
+        "from1To5Minutes": 1502,
+        "from5To10Minutes": 630,
+        "from10To20Minutes": 796,
+        "from20To40Minutes": 775,
+        "from40To60Minutes": 244,
+        "from60To90Minutes": 179,
+        "from90To120Minutes": 116,
+        "from2To3Hours": 126,
+        "from3To4Hours": 63,
+        "from4To6Hours": 76,
+        "over6Hours": 85
+    }, {
+        "date": "2016-10-03",
+        "under1Minute": 17996,
+        "from1To5Minutes": 2727,
+        "from5To10Minutes": 1248,
+        "from10To20Minutes": 1491,
+        "from20To40Minutes": 1600,
+        "from40To60Minutes": 634,
+        "from60To90Minutes": 568,
+        "from90To120Minutes": 395,
+        "from2To3Hours": 418,
+        "from3To4Hours": 154,
+        "from4To6Hours": 149,
+        "over6Hours": 142
+    }, {
+        "date": "2016-10-04",
+        "under1Minute": 12995,
+        "from1To5Minutes": 1479,
+        "from5To10Minutes": 617,
+        "from10To20Minutes": 680,
+        "from20To40Minutes": 722,
+        "from40To60Minutes": 304,
+        "from60To90Minutes": 281,
+        "from90To120Minutes": 191,
+        "from2To3Hours": 156,
+        "from3To4Hours": 51,
+        "from4To6Hours": 40,
+        "over6Hours": 50
+    }, {
+        "date": "2016-10-05",
+        "under1Minute": 8896,
+        "from1To5Minutes": 597,
+        "from5To10Minutes": 176,
+        "from10To20Minutes": 213,
+        "from20To40Minutes": 212,
+        "from40To60Minutes": 65,
+        "from60To90Minutes": 66,
+        "from90To120Minutes": 38,
+        "from2To3Hours": 52,
+        "from3To4Hours": 16,
+        "from4To6Hours": 25,
+        "over6Hours": 32
+    }, {
+        "date": "2016-10-06",
+        "under1Minute": 9407,
+        "from1To5Minutes": 571,
+        "from5To10Minutes": 165,
+        "from10To20Minutes": 199,
+        "from20To40Minutes": 231,
+        "from40To60Minutes": 82,
+        "from60To90Minutes": 71,
+        "from90To120Minutes": 38,
+        "from2To3Hours": 52,
+        "from3To4Hours": 14,
+        "from4To6Hours": 25,
+        "over6Hours": 20
+    }, {
+        "date": "2016-10-07",
+        "under1Minute": 5470,
+        "from1To5Minutes": 442,
+        "from5To10Minutes": 172,
+        "from10To20Minutes": 159,
+        "from20To40Minutes": 182,
+        "from40To60Minutes": 56,
+        "from60To90Minutes": 43,
+        "from90To120Minutes": 29,
+        "from2To3Hours": 46,
+        "from3To4Hours": 12,
+        "from4To6Hours": 19,
+        "over6Hours": 15
+    }];
+
+    // Tạo dữ liệu
+    for (var i = 0; i < data.length; i++) {
+        var ageNames = d3.keys(data[i]).filter(function (key) {
+            return key !== "date";
+        });
+    }
+
+
+    data.forEach(function (d) {
+        d.items = ageNames.map(function (name) {
+            return {
+                name: name, // ngày
+                value: +d[name] // số lượng ngừoi
+            };
+        });
+    });
+
+    // trat về dữ liệu ngày dưới cột x
+    x0.domain(data.map(function (d) {
+        return d.date;
+    }));
+    x1.domain(ageNames).rangeRoundBands([0, x0.rangeBand()]);
+
+
+    // hiển thị dữ liệu ngày dưới cột y
+    y.domain([0, d3.max(data, function (d) {
+        return d3.max(d.items, function (d) {
+            return d.value;
+        });
+    })]);
+
+
+
+    //making the x axis/y axis
+
+    var xg = svg.append("g")
+            .attr("class", "x axis")
+            .attr("transform", "translate(0," + height + ")")
+            .call(xAxis);
+
+    var yg = svg.append("g")
+            .attr("class", "y axis")
+            .call(yAxis);
+
+    yg.append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("y", 6)
+            .attr("dy", ".71em")
+            .style("text-anchor", "end")
+            .text("number visitor");
+
+   var tip = d3.tip()
+            .attr('class', 'd3-tip')
+            .offset([-10, 0])
+            .html(function (d) {
+                return "<strong>Frequency:</strong> <span style='color:red'>" + d.value + "</span>";
+            })
+    svg.call(tip);
+    //xg.call(xAxis);
+    //yg.call(yAxis);
+
+
+    //removing all the rectangles
+    svg.selectAll(".TestSuite").remove();
+
+    var state = svg.selectAll(".TestSuite")
+            .data(data)
+            .enter().append("g")
+            .attr("class", "TestSuite")
+            .attr("transform", function (d) {
+                return "translate(" + x0(d.date) + ",0)";
+            })
+
+
+    state.selectAll("rect")
+            .data(function (d) {
+                return d.items;
+            })
+            .enter().append("rect")
+            .attr("width", x1.rangeBand())
+            .attr("x", function (d) {
+                return x1(d.name);
+            })
+            .attr("y", function (d) {
+                return y(d.value);
+            })
+            .attr("height", function (d) {
+                return height - y(d.value);
+            })
+            .style("fill", function (d) {
+                return color(d.name);
+            })
+    .on('mouseover', tip.show)
+            .on('mouseout', tip.hide);;
+
+</script>
+</body>
+</html>

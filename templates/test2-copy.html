@@ -1,0 +1,738 @@
+<body>
+<style>
+    #favorite-content {
+        position: absolute;
+        width: 98%;
+        height: 98%;
+    }
+
+    svg {
+        width: 100%;
+        height: 100%;
+    }
+
+    .stat text,
+    .axis text {
+        font: 9px sans-serif;
+    }
+
+    .axis path,
+    .axis line {
+        fill: none;
+        stroke: #000;
+        shape-rendering: crispEdges;
+    }
+
+    .focus-path,
+    .context-path {
+        fill: none;
+        stroke: steelblue;
+        stroke-width: 1.5px;
+        clip-path: url(#clip);
+    }
+
+    .focus-line {
+        stroke-dasharray: 3, 3;
+        stroke-width: 2;
+    }
+
+    .brush .extent {
+        stroke: #fff;
+        fill-opacity: .125;
+        shape-rendering: crispEdges;
+    }
+
+    rect.pane {
+        cursor: move;
+        fill: none;
+        pointer-events: all;
+    }
+</style>
+
+<script src="../static/d3/d3.v3.min.js"></script>
+<script src="../static/js/jquery-3.1.1.js"></script>
+
+
+<script>
+    /*
+     * Dummy data
+     */
+    var data = [];
+    var count = 60;
+    while (count > 0) {
+        data.push({
+            friends: Math.round(Math.random() * 100),
+            enemies: Math.round(Math.random() * 100),
+            date: d3.time.day.round(new Date(new Date().setDate(new Date().getDate() - count)))
+        });
+        count--;
+    }
+
+    // Danh sách các HUST
+    listHusts = ['friends', 'enemies'];
+
+    console.log(data);
+
+    var $svg = $('#favorite-content'),
+            margin = {top: 30, right: 150, bottom: 74, left: 45},
+            margin2 = {top: 250, right: 150, bottom: 15, left: 45},
+            width = 1000,
+            height = 300 - margin.top - margin.bottom,
+            height2 = 300 - margin2.top - margin2.bottom;
+
+    /*
+     * Initial setup/color/stats
+     */
+    var svg = d3.select("body").append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom);//height + margin.top + margin.bottom
+    /*.append("g")
+     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");*/
+
+    /* var svg = d3.select($svg[0])
+     .attr('width', width + margin.left + margin.right)
+     .attr('height', height + margin.top + margin.bottom);*/
+
+    var color = d3.scale.category10()
+            .domain(d3.keys(data[0]).filter(function (key) {
+                return key !== 'date';
+            }));
+
+    var bisectDate = d3.bisector(function (d) {
+        return d.date;
+    }).left;
+
+
+    /**
+     * Chuẩn hóa lại dữ liệu thành các đối tượng theo dạng
+     * name, value, visiable
+     * @type {any}
+     */
+    var stats = color.domain().map(function (name) {
+        return {
+            name: name,
+            values: data.map(function (d) {
+                return {date: d.date, stat: d[name]};
+            }),
+            visible: true /*  thuộc tính này nếu true thì hiển thị, ngược lại*/
+        };
+    });
+
+    console.log(stats)
+
+
+    /*
+     * Scales
+     */
+
+    var x = d3.time.scale()
+            .range([0, width])
+            .domain([data[0].date, data[data.length - 1].date]);
+
+    var x2 = d3.time.scale()
+            .range([0, width])
+            .domain(x.domain());
+
+    var y = d3.scale.linear()
+            .range([height, 0])
+            .domain([
+                d3.min(stats, function (s) {
+                    return d3.min(s.values, function (v) {
+                        return v.stat;
+                    });
+                }),
+                d3.max(stats, function (s) {
+                    return d3.max(s.values, function (v) {
+                        return v.stat;
+                    });
+                }),
+            ]);
+
+    var y2 = d3.scale.linear()
+            .range([height2, 0])
+            .domain(y.domain());
+
+    /*
+     * Axises
+     */
+
+    var xAxis = d3.svg.axis()
+            .scale(x)
+            .orient('bottom')
+            .ticks(3);
+
+    var xAxis2 = d3.svg.axis()
+            .scale(x2)
+            .orient('bottom')
+            .ticks(3);
+
+    var yAxis = d3.svg.axis()
+            .scale(y)
+            .orient('left');
+
+    /*
+     * Brush and Zoom
+     */
+
+    var brush = d3.svg.brush()
+            .x(x2)
+            .on('brush', brushed);
+
+    var zoom = d3.behavior.zoom()
+            .on('zoom', draw)
+            .x(x);
+
+    zoom.x(x);
+
+    /*
+     * Focus/Context lines
+     */
+
+    var line = d3.svg.line()
+            .x(function (d) {
+                return x(d.date);
+            })
+            .y(function (d) {
+                return y(d.stat);
+            });
+
+    var line2 = d3.svg.line()
+            .interpolate('basis')
+            .x(function (d) {
+                return x2(d.date);
+            })
+            .y(function (d) {
+                return y2(d.stat);
+            });
+
+    svg.append('defs').append('clipPath')
+            .attr('id', 'clip')
+            .append('rect')
+            .attr('width', width)
+            .attr('height', height);
+
+    // HoverDate hiển thị ngày trên góc đồ thị khi hover chuột vào
+    var hoverDate = svg.append("g")
+            .attr("class", "hover-line");
+    var hoverDate = hoverDate
+            .append('text')
+            .attr("class", "hover-text")
+            .attr("y", height - (height - 40)) // hover date text position
+            .attr("x", width - 150) // hover date text position
+
+    /* Đồ thị lớn hiển thị phía trên */
+    var focus = svg.append('g')
+            .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+    /*  Đồ thị nhỏ  hiển thị ở dưới*/
+    var context = svg.append('g')
+            .attr('transform', 'translate(' + margin2.left + ',' + margin2.top + ')');
+
+    // Thệm cột Ox, Oy cho đồ thị lớn
+    focus.append('g')
+            .attr('class', 'x axis')
+            .attr('transform', 'translate(0,' + height + ')')
+            .call(xAxis);
+
+    focus.append('g')
+            .attr('class', 'y axis')
+            .call(yAxis)
+            .append('text')
+            .attr('transform', 'rotate(-90)')
+            .attr('y', 0 - margin.left)
+            .attr('x', 0 - (height / 2))
+            .attr('dy', '.71em')
+            .attr('text-anchor', 'middle')
+            .attr('Active Users');
+
+    // THêm cột Ox cho đồ thị nhỏ
+    context.append('g')
+            .attr('class', 'x axis')
+            .attr('transform', 'translate(0,' + height2 + ')')
+            .call(xAxis2);
+
+    var legendSpace = height / stats.length;
+
+    // Hiển thị các đường vẽ dữ liệu
+    var focusStat = focus.selectAll('.favorite-stat')
+            .data(stats)
+            .enter().append('g')
+            .attr('class', 'stat');
+
+
+    // Hiện thị tên & giá trị của các hust khi hove
+    // Giá trị
+    var hustValues = focus.selectAll('.value-point')
+            .data(listHusts) // bind each column name date to each g element
+            .enter().append("g") //create one <g> for each columnName
+            .attr("class", "focus");
+    hustValues.append("text") // http://stackoverflow.com/questions/22064083/d3-js-multi-series-chart-with-y-value-tracking
+            .attr("x", width + (margin.right / 3) - 35)
+            .attr("y", function (d, i) {
+                return (legendSpace) + i * (legendSpace);
+            })
+
+    // Tên
+    var hustName = focus.selectAll('.name-point')
+            .data(listHusts) // bind each column name date to each g element
+            .enter().append("g") //create one <g> for each columnName
+            .attr("class", "focus");
+    hustName.append("text") // http://stackoverflow.com/questions/22064083/d3-js-multi-series-chart-with-y-value-tracking
+            .attr("x", width + margin.right / 3)
+            .attr("y", function (d, i) {
+                return (legendSpace) + i * (legendSpace);
+            })
+            .text(function (name) {
+                return name
+            });
+
+
+    /*---------     Thực hiện vẽ các đường     -------------*/
+    // Path là đường hiển thị dữ liệu
+    focusStat.append('path')
+            .attr('class', 'focus-path')
+            .attr("id", function (d) {
+                return "line-" + d.name.replace(" ", "").replace("/", "");
+            })
+            .attr("d", function (d) {
+                return d.visible ? line(d.values) : null;
+            })
+            .style('stroke', function (d) {
+                return color(d.name);
+            })
+
+    // Hiển thị tên các hust
+    /*
+     focusStat.append("text")
+     .attr("id", function (d) {
+     return "lable-" + d.name.replace(" ", "").replace("/", "");
+     })
+     .attr('disabled', null)
+     .attr("x", width + (margin.right / 3))
+     .attr("y", function (d, i) {
+     return (legendSpace) + i * (legendSpace);
+     })
+
+     .text(function (d) {
+     return d.name;
+     });
+     */
+
+
+    hustCircle = focusStat.append('circle')
+            .attr('opacity', 0)
+            .attr('r', 4)
+            .attr('fill', function (d) {
+                return color(d.name);
+            })
+    hustXLine = focusStat.append('line')
+            .attr('class', 'focus-line')
+            .style('stroke', function (d) {
+                return color(d.name);
+            })
+            .style('stroke-width', function (d) {
+                return d.visible ? 2: 0;
+            })
+            .attr('opacity', 1);
+
+    hustYLine = focusStat.append('line')
+            .attr('class', 'focus-line')
+            .style('stroke', function (d) {
+                return color(d.name);
+            })
+             .style('stroke-width', function (d) {
+                return d.visible ? 2: 0;
+            })
+            .attr('opacity', 1);
+
+
+    // Hiển thị hình vuông các màu
+    focusStat.append("rect")
+            .attr("width", 10)
+            .attr("height", 10)
+            .attr("x", width + (margin.right / 3) - 15)
+            .attr("y", function (d, i) {
+                return (legendSpace) + i * (legendSpace) - 8;
+            })  // spacing
+            .attr("fill", function (d) {
+                return d.visible ? color(d.name) : "#F1F1F2"; // If array key "visible" = true then color rect, if not then make it grey
+            })
+            .attr("class", "legend-box")
+
+            .on("click", function (d) { // On click make d.visible
+                d.visible = !d.visible; // If array key for this data selection is "visible" = true then make it false, if false then make it true
+
+                maxY = findMaxY(stats); // Find max Y rating value categories data with "visible"; true
+                y.domain([0, maxY]); // Redefine yAxis domain based on highest y value of categories data with "visible"; true
+                svg.select(".y.axis")
+                        .transition()
+                        .call(yAxis);
+
+                // Không hiển thị path nữa nếu visiable = false;
+                focusStat.select("path")
+                        .transition()
+                        .attr("d", function (d) {
+                            return d.visible ? line(d.values) : null;
+                        })
+
+                // Không hiển thị vòng tròn (cho bán kính về = 0)
+                focusStat.select("circle")
+                        .transition()
+                        .attr("r", function (d) {
+                            return d.visible ? 4 : 0;
+                        })
+
+                // Không hiển thị đường nét đứt
+                focusStat.selectAll("line")
+                        .transition()
+                        .style("stroke-width", function (d) {
+                            return d.visible ? 2 : 0;
+                        })
+
+                // Chuyển đổi màu của hình vuông
+                focusStat.select("rect")
+                        .transition()
+                        .attr("fill", function (d) {
+                            return d.visible ? color(d.name) : "#F1F1F2";
+                        })
+
+            })
+
+            .on("mouseover", function (d) {
+
+                d3.select(this)
+                        .transition()
+                        .attr("fill", function (d) {
+                            return color(d.name);
+                        });
+
+                d3.select("#line-" + d.name.replace(" ", "").replace("/", ""))
+                        .transition()
+                        .style("stroke-width", 2.5);
+
+            })
+
+            .on("mouseout", function (d) {
+
+                d3.select(this)
+                        .transition()
+                        .attr("fill", function (d) {
+                            return d.visible ? color(d.name) : "#F1F1F2";
+                        });
+
+
+                d3.select("#line-" + d.name.replace(" ", "").replace("/", ""))
+                        .transition()
+                        .style("stroke-width", 1.5);
+
+            })
+
+    //  Them cycle
+    focusStat.append('circle')
+            .attr('opacity', 0)
+            .attr('r', 100)
+            .attr("x", width - 15)
+            .attr("y", height - 15)
+            .attr('fill', function (d) {
+                return color(d.name);
+            })
+
+
+    /* Text cho circler */
+    /*
+     focusStat.append("text")
+     .attr("id", function (d) {
+     return "value-" + d.name.replace(" ", "").replace("/", ""); // Give line id of line-(insert issue name, with any spaces replaced with no spaces)
+     })
+     .attr("class", "y1")
+     .style("stroke", "white")
+     .style("stroke-width", "3.5px")
+     .style("opacity", 0.8)
+     .attr("dx", 8)
+     .attr("dy", "-.3em")
+     .attr("x", width + (margin.right / 3) + 40)
+     .attr("y", function (d, i) {
+     return (legendSpace) + i * (legendSpace);
+     });
+     */
+    console.log(stats);
+
+
+    /*
+     // Mỗi đường path thì có 1 circle để hiển thị vị trí khi hover
+     var circle = focus.append('g')
+     .selectAll('g')
+     .data(stats)
+     .enter().append('g');
+
+
+     // Vòng tròn khi hover chuột
+     focusCircle = circle.append('circle')
+     .attr('opacity', 0)
+     .attr('r', 4)
+     .attr('fill', function (d) {
+     return color(d.name);
+     })
+     */
+    // Đường 3 chấm theo theo Ox
+
+    /*
+     var focusXLine = focus.append('g')
+     .selectAll('g')
+     .data(stats)
+     .enter().append('g')
+     .append('line')
+     .attr('class', 'focus-line')
+     .style('stroke', function (d) {
+     return color(d.name);
+     })
+     .attr('opacity', 0);
+     */
+
+    // Đường 3 chấm theo y
+    /*
+     var focusYLine = focus.append('g')
+     .selectAll('g')
+     .data(stats)
+     .enter().append('g')
+     .append('line')
+     .attr('class', 'focus-line')
+     .style('stroke', function (d) {
+     return color(d.name);
+     })
+     .attr('opacity', 0);
+     */
+
+    /*
+     Tất cả các sự kiện liên quan đến đồ thì lớn
+     */
+    var focusRect = focus.append('rect')
+            .attr('width', width)
+            .attr('height', height)
+            .attr('class', 'pane')
+            .on('mouseover', function () {
+                //focusCircle.attr('opacity', 1);
+                //focusXLine.attr('opacity', 0.5);
+                //focusYLine.attr('opacity', 0.5);
+
+                hustXLine.attr('opacity', 0.5);
+                hustYLine.attr('opacity', 0.5);
+
+                hustCircle.attr('opacity', 1);
+                hustValues.attr('opacity', 1);
+                hoverDate.attr('opacity', 1);
+
+            })
+            .on('mouseout', function () {
+                //focusCircle.attr('opacity', 0);
+                //focusXLine.attr('opacity', 0);
+                //focusYLine.attr('opacity', 0);
+                hustXLine.attr('opacity', 0);
+                hustYLine.attr('opacity', 0);
+
+                hustCircle.attr('opacity', 0);
+                hustValues.attr('opacity', 0);
+                hoverDate.attr('opacity', 0);
+            })
+            .on('mousemove', mouseMove)
+            //.call(zoom);
+
+    /*var circle = focus.append('circle')
+     .attr('opacity', 0)
+     .attr('r', 4)
+     .attr('fill', function (d) {
+     return color(d.name);
+     })*/
+
+    /*
+     focusCircle = circle.append('circle')
+     .attr('opacity', 0)
+     .attr('r', 4)
+     .attr('fill', function (d) {
+     return color(d.name);
+     })*/
+    var contextStat = context.selectAll('.context-stat')
+            .data(stats)
+            .enter().append('g')
+            .attr('class', 'stat');
+
+    contextStat.append('path')
+            .attr('class', 'context-path')
+            .attr('d', function (d) {
+                return line2(d.values);
+            })
+            .style('stroke', function (d) {
+                return color(d.name);
+            });
+
+    context.append('g')
+            .attr('class', 'x brush')
+            .call(brush)
+            .selectAll('rect')
+            .attr('y', -6)
+            .attr('height', height2 + 7);
+
+    /*
+     Thực hiện vẽ lại
+     */
+    function draw() {
+        focus.selectAll('.focus-path').attr('d', function (d) {
+            return d.visible ? line(d.values) : null;
+        });
+
+        focus.selectAll('.context-path').attr('d', function (d) {
+            return line2(d.values);
+        });
+
+        // Không hiển thị vòng tròn (cho bán kính về = 0)
+        focusStat.select("circle")
+                .transition()
+                .attr("r", function (d) {
+                    return d.visible ? 4 : 0;
+                })
+
+        // Không hiển thị đường nét đứt
+        focusStat.selectAll("line")
+                .transition()
+                .style("stroke-width", function (d) {
+                    return d.visible ? 2 : 0;
+                })
+
+        // Chuyển đổi màu của hình vuông
+        focusStat.select("rect")
+                .transition()
+                .attr("fill", function (d) {
+                    return d.visible ? color(d.name) : "#F1F1F2";
+                })
+
+
+        focus.select('.x.axis').call(xAxis);
+        brush.extent(x.domain());
+        svg.select('.brush').call(brush);
+    }
+
+    function brushed() {
+
+        x.domain(brush.empty() ? x2.domain() : brush.extent());
+
+        // Vẽ lại ở bản đồ phía trên
+        focus.selectAll('.focus-path').attr('d', function (d) {
+            return line(d.values);
+        });
+
+        focus.select('.x.axis').call(xAxis);
+        zoom.x(x);
+    }
+
+
+    /**
+     * Khi chuột di chuyển
+     * - mình sẽ xác định đang ở ngày nào
+     * - Và giá trị cửa từng path
+     * - Thay đổi vị trị các circle
+     */
+    function mouseMove() {
+        // Cập nhật vị trí
+        var mouse_x = d3.mouse(this)[0]; // vị trí con chuột
+        var date = x.invert(mouse_x); // lấy ra ngày
+
+        var x0 = d3.time.day.round(date),
+                i = bisectDate(data, x0, 1);
+
+        hoverDate.text(date);
+
+
+        //i = bisectDate(data, date, 1), // use our bisectDate function that we declared earlier to find the index of our data array that is close to the mouse cursor
+        /*It takes our data array and the date corresponding to the position of or mouse cursor and returns the index number of the data array which has a date that is higher than the cursor position.*/
+        d0 = data[i - 1],
+                d1 = data[i],
+                /*d0 is the combination of date and rating that is in the data array at the index to the left of the cursor and d1 is the combination of date and close that is in the data array at the index to the right of the cursor. In other words we now have two variables that know the value and date above and below the date that corresponds to the position of the cursor.*/
+                d = x0 - d0.date > d1.date - x0 ? d1 : d0;
+        // i = x0 - d0.date > d1.date - x0 ? i-1 : i;
+
+        hustValues.select("text").text(
+                function (hustName) {
+                    return d[hustName]
+                })
+
+
+        hustCircle.transition()
+                .duration(300)
+                .delay(10)
+                .ease('bounce')
+                .attr('cx', x(x0))
+                .attr('cy', function (d) {
+                    return y(d.values[i].stat);
+                })
+
+        hustXLine.transition()
+                .duration(300)
+                .delay(10)
+                .ease('bounce')
+                .attr('x1', 0)
+                .attr('x2', x(x0))
+                .attr('y1', function (d) {
+                    return y(d.values[i].stat);
+                })
+                .attr('y2', function (d) {
+                    return y(d.values[i].stat);
+                });
+
+        hustYLine.transition()
+                .duration(333)
+                .delay(10)
+                .ease('bounce')
+                .attr('x1', x(x0))
+                .attr('x2', x(x0))
+                .attr('y1', height)
+                .attr('y2', function (d) {
+                    return y(d.values[i].stat);
+                });
+        /*
+         focusCircle.transition()
+         .duration(300)
+         .delay(10)
+         .ease('bounce')
+         .attr('cx', x(x0))
+         .attr('cy', function (d) {
+         return y(d.values[i].stat);
+         });
+
+
+         focusXLine.transition()
+         .duration(300)
+         .delay(10)
+         .ease('bounce')
+         .attr('x1', 0)
+         .attr('x2', x(x0))
+         .attr('y1', function (d) {
+         return y(d.values[i].stat);
+         })
+         .attr('y2', function (d) {
+         return y(d.values[i].stat);
+         });
+
+         focusYLine.transition()
+         .duration(333)
+         .delay(10)
+         .ease('bounce')
+         .attr('x1', x(x0))
+         .attr('x2', x(x0))
+         .attr('y1', height)
+         .attr('y2', function (d) {
+         return y(d.values[i].stat);
+         });     */
+    }
+    function findMaxY(data) {  // Define function "findMaxY"
+        var maxYValues = data.map(function (d) {
+            if (d.visible) {
+                return d3.max(d.values, function (value) { // Return max rating value
+                    return value.stat;
+                })
+            }
+        });
+        return d3.max(maxYValues);
+    }
+</script>
+
+</body>

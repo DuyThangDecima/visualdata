@@ -1,0 +1,720 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+
+    <style>
+        .plot {
+            fill: rgba(250, 250, 255, 0.6);
+        }
+
+        .grid .tick {
+            stroke: lightgrey;
+            opacity: 0.7;
+        }
+
+        .grid path {
+            stroke-width: 0;
+        }
+
+        .axis path, .axis line {
+            fill: none;
+            stroke: #000;
+            shape-rendering: crispEdges;
+        }
+
+        .x.axis path {
+            display: none;
+        }
+
+        .line {
+            fill: none;
+            stroke: steelblue;
+            stroke-width: 1.5px;
+        }
+    </style>
+    <script>
+
+        function oneRegion(dataContent, resolution, charType) {
+
+
+            // Lấy mỗi array các phần tử thôi
+            data_visit = JSON.parse(dataContent).summaryStats;
+            data_return = JSON.parse(dataContent).summaryStats;
+
+            //console.log(data)
+
+            var parseDate;
+            var eachItem;
+            var step; // Khoang cach hien thi vach o chieu x
+            if (resolution == "hours") {
+                parseDate = d3.time.format("%Y-%m-%dT%H:%M:%S").parse;
+                formatDate = d3.time.format("%H:%M-%d");
+                eachItem = 5;
+                step = 12; // Hien thi gio theo kieu 0:3:6:9
+
+            } else {
+                parseDate = d3.time.format("%Y-%m-%d").parse;
+                formatDate = d3.time.format("%d-%b")
+                eachItem = 80;
+                step = 1; // Luon hien thi ngay
+            }
+
+            /*
+             * CHÚ Ý:
+             * Đang hiển thị cho numVisitors hoặc numReturningVisitors
+             * 2 giá trị này sẽ đưa về value, dùng value để thay thế cho cả 2
+             * */
+
+
+            data_visit.forEach(function (d) {
+                d.date = parseDate(d.date);
+                d.value = +d.numVisitors;
+            });
+
+            margin = {
+                top: 20,
+                right: 20,
+                bottom: 20,
+                left: 20
+            };
+
+            draw("visualize-visit", data_visit);
+
+            data_return.forEach(function (d) {
+                d.date = parseDate(d.date);
+                d.value = +d.numReturningVisitors;
+            });
+            draw("visualize-return", data_return);
+            // Hàm truyền vào id-div hiển thị và data, sẽ thực hiện vẽ
+
+            function draw(id, data) {
+
+
+                fullWidth = document.getElementById(id).clientWidth;
+                fullHeight = document.getElementById(id).clientHeight;
+
+                width = fullWidth - margin.left - margin.right;
+                height = fullHeight - margin.top - margin.bottom;
+
+                var x = d3.time.scale()
+                        .domain(d3.extent(data, function (d) {
+                            return d.date;
+                        }))
+                        .range([0, width]);
+
+                var y = d3.scale.linear()
+                        .domain(d3.extent(data, function (d) {
+                            return d.value;
+                        }))
+                        .range([height, 0]);
+
+                // Thêm tính năng zoom
+                var zoom = d3.behavior.zoom()
+                        .x(x)
+                        .on("zoom", zoomed);
+
+                // Line hiển thị dữ liệu
+                var line = d3.svg.line()
+                        .x(function (d) {
+                            return x(d.date);
+                        })
+                        .y(function (d) {
+                            return y(d.value);
+                        });
+
+
+                var svg = d3.select('#' + id)
+                        .append("svg:svg")
+                        .attr('width', width + margin.left + margin.right)
+                        .attr('height', height + margin.top + margin.bottom)
+                        .append("svg:g")
+                        .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+                        .call(zoom);
+
+                svg.append("svg:rect")
+                        .attr("width", width)
+                        .attr("height", height)
+                        .attr("class", "plot");
+
+
+                // Focus là liên quan đến vòng tròn hiện thị khi hover lên line
+                var focus = svg.append("g")
+                        .style("display", "none");
+                // thêm thanh 3 chấm x
+                focus.append("line")
+                        .attr("class", "x")
+                        .style("stroke", "blue")
+                        .style("stroke-dasharray", "3,3")
+                        .style("opacity", 0.5)
+                        .attr("y1", 0)
+                        .attr("y2", height);
+                // thêm thanh 3 chấm y
+                focus.append("line")
+                        .attr("class", "y")
+                        .style("stroke", "blue")
+                        .style("stroke-dasharray", "3,3")
+                        .style("opacity", 0.5)
+                        .attr("x1", width)
+                        .attr("x2", width);
+                // thêm vòng tròn
+                focus.append("circle")
+                        .attr("class", "y")
+                        .style("fill", "none")
+                        .style("stroke", "blue")
+                        .attr("r", 4);
+                // vòng tròn có text hiển thị giờ-ngày và số người
+                // text này đang hiển thị 2 dòng
+                focus.append("text")
+                        .attr("class", "y1")
+                        .style("stroke", "white")
+                        .style("stroke-width", "3.5px")
+                        .style("opacity", 0.8)
+                        .attr("dx", 8)
+                        .attr("dy", "-.3em");
+                focus.append("text")
+                        .attr("class", "y2")
+                        .attr("dx", 8)
+                        .attr("dy", "-.3em");
+                // place the date at the intersection
+                focus.append("text")
+                        .attr("class", "y3")
+                        .style("stroke", "white")
+                        .style("stroke-width", "3.5px")
+                        .style("opacity", 0.8)
+                        .attr("dx", 8)
+                        .attr("dy", "1em");
+                focus.append("text")
+                        .attr("class", "y4")
+                        .attr("dx", 8)
+                        .attr("dy", "1em");
+
+                var make_x_axis = function () {
+                    return d3.svg.axis()
+                            .scale(x)
+                            .orient("bottom")
+                            .ticks(5);
+                };
+
+                var make_y_axis = function () {
+                    return d3.svg.axis()
+                            .scale(y)
+                            .orient("left")
+                            .ticks(5);
+                };
+
+                var xAxis = d3.svg.axis()
+                        .scale(x)
+                        .orient("bottom");
+
+                svg.append("svg:g")
+                        .attr("class", "x axis")
+                        .attr("transform", "translate(0, " + height + ")")
+                        .call(xAxis);
+
+                var yAxis = d3.svg.axis()
+                        .scale(y)
+                        .orient("left")
+                        .ticks(5);
+
+                svg.append("g")
+                        .attr("class", "y axis")
+                        .call(yAxis);
+
+                svg.append("g")
+                        .attr("class", "x grid")
+                        .attr("transform", "translate(0," + height + ")")
+                        .call(make_x_axis()
+                                .tickSize(-height, 0, 0)
+                                .tickFormat(""));
+
+                svg.append("g")
+                        .attr("class", "y grid")
+                        .call(make_y_axis()
+                                .tickSize(-width, 0, 0)
+                                .tickFormat(""));
+                bisectDate = d3.bisector(function (d) {
+                    return d.date;
+                }).left; // **
+
+
+                /**
+                 * Khi mouseover thì hiển thị hình tròn
+                 * Ngược lại,
+                 * Và khi chuột di chuyển
+                 */
+                svg.on("mouseover", function () {
+                    focus.style("display", null);
+                }).on("mouseout", function () {
+                    focus.style("display", "none");
+                }).on("mousemove", mousemove);
+
+
+                /**
+                 * Xử lý khi chuột di chuyển
+                 */
+                function mousemove() {
+                    var x0 = x.invert(d3.mouse(this)[0]),
+                            i = bisectDate(data, x0, 1),
+                            d0 = data[i - 1],
+                            d1 = data[i],
+                            d = x0 - d0.date > d1.date - x0 ? d1 : d0;
+
+
+                    focus.select("circle.y")
+                            .attr("transform",
+                                    "translate(" + x(d.date) + "," +
+                                    y(d.value) + ")");
+                    focus.select("text.y1")
+                            .attr("transform",
+                                    "translate(" + x(d.date) + "," +
+                                    y(d.value) + ")")
+                            .text(d.value);
+                    focus.select("text.y2")
+                            .attr("transform",
+                                    "translate(" + x(d.date) + "," +
+                                    y(d.value) + ")")
+                            .text(d.value);
+                    focus.select("text.y3")
+                            .attr("transform",
+                                    "translate(" + x(d.date) + "," +
+                                    y(d.value) + ")")
+                            .text(formatDate(d.date));
+                    focus.select("text.y4")
+                            .attr("transform",
+                                    "translate(" + x(d.date) + "," +
+                                    y(d.value) + ")")
+                            .text(formatDate(d.date));
+                    focus.select(".x")
+                            .attr("transform",
+                                    "translate(" + x(d.date) + "," +
+                                    y(d.value) + ")")
+                            .attr("y2", height - y(d.value));
+                    focus.select(".y")
+                            .attr("transform",
+                                    "translate(" + width * -1 + "," +
+                                    y(d.value) + ")")
+                            .attr("x2", width + width);
+                }
+
+                var clip = svg.append("svg:clipPath")
+                        .attr("id", "clip")
+                        .append("svg:rect")
+                        .attr("x", 0)
+                        .attr("y", 0)
+                        .attr("width", width)
+                        .attr("height", height);
+
+                var chartBody = svg.append("g")
+                        .attr("clip-path", "url(#clip)");
+
+                chartBody.append("svg:path")
+                        .datum(data)
+                        .attr("class", "line")
+                        .attr("d", line);
+
+                function zoomed() {
+                    console.log(d3.event.translate);
+                    console.log(d3.event.scale);
+                    svg.select(".x.axis").call(xAxis);
+                    svg.select(".y.axis").call(yAxis);
+                    svg.select(".x.grid")
+                            .call(make_x_axis()
+                                    .tickSize(-height, 0, 0)
+                                    .tickFormat(""));
+                    svg.select(".y.grid")
+                            .call(make_y_axis()
+                                    .tickSize(-width, 0, 0)
+                                    .tickFormat(""));
+                    svg.select(".line")
+                            .attr("class", "line")
+                            .attr("d", line);
+                }
+            }
+
+        }
+
+        function allRegion(dataContent, resolution) {
+            console.log("data", dataContent)
+            data = dataContent;
+            data = JSON.parse('[' + data + ']')
+
+
+            var margin = {top: 20, right: 80, bottom: 30, left: 50},
+                    width = 960 - margin.left - margin.right,
+                    height = fullHeight - margin.top - margin.bottom;
+            var parseDate;
+            if (resolution == "hours") {
+                parseDate = d3.time.format("%Y-%m-%dT%H:%M:%S").parse;
+            } else {
+                parseDate = d3.time.format("%Y-%m-%d").parse;
+            }
+
+            var x = d3.time.scale()
+                    .range([0, width]);
+
+            var y = d3.scale.linear()
+                    .range([height, 0]);
+
+            var color = d3.scale.ordinal().range(["#FF0000", "#FFFF00", "#000000", "#FF00FF"]);
+
+            var xAxis = d3.svg.axis()
+                    .scale(x)
+                    .orient("bottom");
+
+            var yAxis = d3.svg.axis()
+                    .scale(y)
+                    .orient("left");
+
+            var line = d3.svg.line()
+                    .interpolate("basis")
+                    .x(function (d) {
+                        return x(d.date);
+                    })
+                    .y(function (d) {
+                        return y(d.temperature);
+                    });
+
+
+            // Thêm tính năng zoom
+            var zoom = d3.behavior.zoom()
+                    .x(x)
+                    .y(y)
+                    .on("zoom", zoomed);
+
+            var svg = d3.select("#visualize").append("svg")
+                    .attr("width", width + margin.left + margin.right)
+                    .attr("height", height + margin.top + margin.bottom)
+                    .append("g")
+                    .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+                    .call(zoom);
+            ;
+            svg.append("svg:rect")
+                    .attr("width", width)
+                    .attr("height", height)
+                    .attr("class", "svg plot");
+
+            var make_x_axis = function () {
+                return d3.svg.axis()
+                        .scale(x)
+                        .orient("bottom")
+                        .ticks(5);
+            };
+
+            function make_y_axis() {
+                return d3.svg.axis()
+                        .scale(y)
+                        .orient("left")
+            }
+
+
+            data.forEach(function (d) {
+                d.date = parseDate(d.date);
+            });
+
+            color.domain(d3.keys(data[0]).filter(function (key) {
+                return key !== "date";
+            }));
+
+
+            //console.log(data);
+
+            var cities = color.domain().map(function (name) {
+                return {
+                    name: name,
+                    values: data.map(function (d) {
+                        return {date: d.date, temperature: +d[name]};
+                    })
+                };
+            });
+
+            console.log(cities);
+
+            x.domain(d3.extent(data, function (d) {
+                return d.date;
+            }));
+
+            y.domain([
+                d3.min(cities, function (c) {
+                    return d3.min(c.values, function (v) {
+                        return v.temperature;
+                    });
+                }),
+                d3.max(cities, function (c) {
+                    return d3.max(c.values, function (v) {
+                        return v.temperature;
+                    });
+                })
+            ]);
+
+            svg.append("g")
+                    .attr("class", "x axis")
+                    .attr("transform", "translate(0," + height + ")")
+                    .call(xAxis);
+
+            svg.append("g")
+                    .attr("class", "y axis")
+                    .call(yAxis)
+            svg.append("g")
+                    .attr("class", "grid")
+                    .call(make_y_axis()
+                            .tickSize(-width, 0, 0)
+                            .tickFormat("")
+                    )
+
+
+            var city = svg.selectAll(".city")
+                    .data(cities)
+                    .enter().append("g")
+                    .attr("class", "city");
+
+            city.append("path")
+                    .attr("class", "line")
+                    .attr("d", function (d) {
+                        return line(d.values);
+                    })
+                    .style("stroke", function (d) {
+                        return color(d.name);
+                    });
+
+
+            var mouseG = svg.append("g")
+                    .attr("class", "mouse-over-effects");
+
+            mouseG.append("path") // this is the black vertical line to follow mouse
+                    .attr("class", "mouse-line")
+                    .style("stroke", "black")
+                    .style("stroke-width", "1px")
+                    .style("opacity", "0");
+
+            var lines = document.getElementsByClassName('line');
+
+            var mousePerLine = mouseG.selectAll('.mouse-per-line')
+                    .data(cities)
+                    .enter()
+                    .append("g")
+                    .attr("class", "mouse-per-line");
+
+            mousePerLine.append("circle")
+                    .attr("r", 7)
+                    .style("stroke", function (d) {
+                        return color(d.name);
+                    })
+                    .style("fill", "none")
+                    .style("stroke-width", "1px")
+                    .style("opacity", "0");
+
+            mousePerLine.append("text")
+                    .attr("transform", "translate(10,3)");
+
+            mouseG.append('svg:rect') // append a rect to catch mouse movements on canvas
+                    .attr('width', width) // can't catch mouse events on a g element
+                    .attr('height', height)
+                    .attr('fill', 'none')
+                    .attr('pointer-events', 'all')
+                    .on('mouseout', function () { // on mouse out hide line, circles and text
+                        d3.select(".mouse-line")
+                                .style("opacity", "0");
+                        d3.selectAll(".mouse-per-line circle")
+                                .style("opacity", "0");
+                        d3.selectAll(".mouse-per-line text")
+                                .style("opacity", "0");
+                    })
+                    .on('mouseover', function () { // on mouse in show line, circles and text
+                        d3.select(".mouse-line")
+                                .style("opacity", "1");
+                        d3.selectAll(".mouse-per-line circle")
+                                .style("opacity", "1");
+                        d3.selectAll(".mouse-per-line text")
+                                .style("opacity", "1");
+                    })
+                    .on('mousemove', function () { // mouse moving over canvas
+                        var mouse = d3.mouse(this);
+                        d3.select(".mouse-line")
+                                .attr("d", function () {
+                                    var d = "M" + mouse[0] + "," + height;
+                                    d += " " + mouse[0] + "," + 0;
+                                    return d;
+                                });
+
+                        d3.selectAll(".mouse-per-line")
+                                .attr("transform", function (d, i) {
+                                    console.log(width / mouse[0])
+                                    var xDate = x.invert(mouse[0]),
+                                            bisect = d3.bisector(function (d) {
+                                                return d.date;
+                                            }).right;
+                                    idx = bisect(d.values, xDate);
+
+                                    var beginning = 0,
+                                            end = lines[i].getTotalLength(),
+                                            target = null;
+
+                                    while (true) {
+                                        target = Math.floor((beginning + end) / 2);
+                                        pos = lines[i].getPointAtLength(target);
+                                        if ((target === end || target === beginning) && pos.x !== mouse[0]) {
+                                            break;
+                                        }
+                                        if (pos.x > mouse[0])      end = target;
+                                        else if (pos.x < mouse[0]) beginning = target;
+                                        else break; //position found
+                                    }
+
+                                    d3.select(this).select('text')
+                                            .text(y.invert(pos.y).toFixed(2));
+
+                                    return "translate(" + mouse[0] + "," + pos.y + ")";
+                                });
+                    });
+
+            function zoomed() {
+                svg.select(".x.axis").call(xAxis);
+                svg.select(".y.axis").call(yAxis);
+                svg.selectAll("path.line")
+                        .attr("d", function (d) {
+                            return line(data);
+                        })
+            }
+        }
+
+        function load_ajax() {
+            $.ajax({
+                url: "{{ url_for('ajax_current') }}",
+                type: "POST",
+                data: JSON.stringify(
+                        {
+                            'time': $('#time').val(),
+
+                            'region': $('#region').val(),
+                        }, null, '\t'),
+                contentType: 'application/json;charset=UTF-8',
+                dataType: 'json',
+                success: function (result) {
+                    console.log(result);
+                    // Xóa hình ảnh trước,
+                    document.getElementById("visualize-visit").innerHTML = "";
+                    document.getElementById("visualize-return").innerHTML = "";
+
+                    var dataContent = result.data;
+                    var region = result.region;
+
+                    if (JSON.parse(dataContent).summaryStats.length <= 0) {//Nếu mà chưa có dữ liệu
+                        document.getElementById("visualize-visit").innerHTML = '<h4 align="center" style="font-weight: bold">Hiện tại chưa có dữ liệu trong ngày</h4>';
+                    }
+                    else {
+                        oneRegion(dataContent, "hours", "")
+                        document.getElementById("des-visit").innerHTML = "Visitors";
+                        document.getElementById("des-return").innerHTML = "Returning Visitors";
+
+
+                    }
+
+
+                }
+            });
+        }
+        $(document).ready(function () {
+            console.log("ready!");
+            load_ajax();
+
+        });
+
+
+
+    </script>
+    <div>
+    {#    Hiển thị 2 thanh chọn ngaỳ tháng#}
+
+    <section id="feature">
+        <div class="con(tainer">
+            <div class="row">
+                <div class="col-md-4 col-sm-12 frame">
+                    <div class="row">
+                        <div data-wow-duration="1000ms"
+                             data-wow-delay="600ms">
+                            <div class="feature-wrap">
+                                <i>Time</i>
+                                <div style="float: left; width: 66%">
+                                    <select class="form-control" id="time" name="time">
+                                        <option value="today">Today</option>
+                                        <option value="yesterday">Yesterday</option>
+                                        <option value="last7day">Last 7 days</option>
+
+                                    </select>
+                                </div>
+                            </div>
+                        </div><!--/.col-md-4-->
+                        <div data-wow-duration="1000ms"
+                             data-wow-delay="600ms">
+                            <div class="feature-wrap">
+                                <i>Region</i>
+                                <div style="float: left;width: 66%">
+                                    <select class="form-control" id="region" name="region">
+                                        <option value="1">HUST 1</option>
+                                        <option value="2">HUST 2</option>
+                                        <option value="3">HUST 3</option>
+                                        <option value="4">HUST 4</option>
+                                        <option value="0">All</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div><!--/.col-md-4-->
+
+                        <div data-wow-duration="1000ms"
+                             data-wow-delay="600ms">
+
+                            <div class="feature-wrap">
+                                <i></i>
+                                <div style="float: left; width: 66%">
+                                    <button class="btn-primary" onclick="load_ajax()"
+                                            style="width:100%;height: 34px;" ;>
+                                        Go
+                                    </button>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-8 col-sm-12 frame">
+                    <div class="row">
+                        {#    Hiển thị biểu đồ#}
+                        <div class="frame" style="height: 40%;width: 100%" id="visualize-visit">
+
+                        </div>
+                        <h6 id="des-visit" style="width: 100%;text-align: center"></h6>
+
+                        <div class="frame" style="height: 40%;width: 100%" class="visualize" id="visualize-return">
+
+                        </div>
+                        <h6 id="des-return" align="center" ></h6>
+
+
+                    </div>
+
+                </div>
+
+            </div><!--/.row-->
+
+
+        </div><!--/.container-->
+
+
+        <script type="text/javascript">
+            $('#datetimepicker_start').datetimepicker({
+                format: 'dd/MM/yyyy hh:mm:ss',
+                language: 'pt-BR'
+            });
+
+            $('#datetimepicker_end').datetimepicker({
+                format: 'dd/MM/yyyy hh:mm:ss',
+                language: 'pt-BR'
+            });
+        </script>
+
+
+    </section>
+{% endblock %}
+

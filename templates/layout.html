@@ -1,0 +1,161 @@
+{#<!doctype html>#}
+
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>BKHN</title>
+
+    <!-- core CSS -->
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/font-awesome.min.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/animate.min.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/prettyPhoto.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/responsive.css') }}">
+    <!--[if lt IE 9]>
+    <script src="{{ url_for('static', filename='js/html5shiv.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/respond.min.js') }}"></script>
+    <![endif]-->
+    <link rel="shortcut icon" href="../static/images/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144"
+          href="../static/images/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114"
+          href="../static/images/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72"
+          href="../static/images/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="../static/images/ico/apple-touch-icon-57-precomposed.png">
+
+    {#    <script src="{{ url_for('static', filename='js/jquery-3.1.1.js') }}"></script>#}
+    <script src="{{ url_for('static', filename='js/jquery.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+    <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/jquery.prettyPhoto.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/jquery.isotope.min.js') }}"></script>
+
+    <script src="{{ url_for('static', filename='js/wow.min.js') }}"></script>
+
+
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+
+    <script type="text/javascript" src="{{ url_for('static', filename='d3/d3.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='d3/d3.v3.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/d3.tip.v0.6.3.js') }}"></script>
+
+
+    {#    Date picker#}
+    <script src="{{ url_for('static', filename='js/bootstrap-datetimepicker.min.js') }}"></script>
+    <link rel="stylesheet" type="text/css"
+          href="{{ url_for('static', filename='css/bootstrap-datetimepicker.min.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/bootstrap-combined.min.css') }}">
+
+
+    {#<script type="text/javascript" src="{{ url_for('static', filename='js/jquery-3.1.1.js') }}"></script>#}
+    {#    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">#}
+
+    {#    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>#}
+
+
+</head><!--/head-->
+
+<body class="homepage">
+<header id="header">
+
+    <script>
+
+
+{#        $(function () {#}
+{#            $("li").click(function () {#}
+{##}
+{#                console.log("DDDDDDDDDDDĐDDDDDDDDDDDĐ")#}
+{#    // remove classes from all#}
+{#                $("li").removeClass("active");#}
+{#                // add class to the one we clicked#}
+{#                $(this).addClass("active");#}
+{#            });#}
+{#        });#}
+        $('.nav li').click(function (e) {
+
+            console.log("DUYTHANGDUYTHANG")
+            $('.nav li.active').removeClass('active');
+            var $this = $(this);
+            if (!$this.hasClass('active')) {
+                $this.addClass('active');
+            }
+            e.preventDefault();
+        });
+    </script>
+
+    <nav class="navbar navbar-inverse" role="banner">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="{{ url_for('home') }}">HUST</a>
+            </div>
+
+            <div class="collapse navbar-collapse navbar-right">
+                <ul class="nav navbar-nav" id="navigation">
+                    <li ><a href="{{ url_for('home') }}">Current</a></li>
+
+                    <li><a href="{{ url_for('visit_return') }}">History</a></li>
+{#                    <li><a href="{{ url_for('duration') }}">Duration</a></li>#}
+                    <li><a href="#">About us</a></li>
+{#                    class="active"#}
+{#                                        <li class="dropdown">#}
+                    {#                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">Pages <i#}
+                    {#                                class="fa fa-angle-down"></i></a>#}
+                    {#                        <ul class="dropdown-menu">#}
+                    {#                            <li><a href="blog-item.html">Blog Single</a></li>#}
+                    {#                            <li><a href="pricing.html">Pricing</a></li>#}
+                    {#                            <li><a href="404.html">404</a></li>#}
+                    {#                            <li><a href="shortcodes.html">Shortcodes</a></li>#}
+                    {#                        </ul>#}
+                    {#                    </li>#}
+                    {#                    <li><a href="blog.html">Blog</a></li>#}
+                    {#                    <li><a href="contact-us.html">Contact</a></li>#}
+                </ul>
+            </div>
+        </div><!--/.container-->
+    </nav><!--/nav-->
+
+</header><!--/header-->
+
+
+{% block content %}{% endblock %}
+
+
+<div class="top-bar">
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-6 col-xs-4">
+                {#                <div class="top-number"><p><i class="fa fa-phone-square"></i> +0123 456 70 90</p></div>#}
+                <h6 style="color: white">Trường Đại học Bách Khoa Hà Nội</h6>
+                <h6 style="color: white">Viện Công nghệ Thông tin và Truyền thông</h6>
+
+            </div>
+            <div class="col-sm-6 col-xs-8">
+                <div class="social">
+                    <ul class="social-share">
+                        <li><a href="#"><i class="fa fa-facebook"></i></a></li>
+                        <li><a href="#"><i class="fa fa-twitter"></i></a></li>
+                        <li><a href="#"><i class="fa fa-linkedin"></i></a></li>
+                        <li><a href="#"><i class="fa fa-dribbble"></i></a></li>
+                        <li><a href="#"><i class="fa fa-skype"></i></a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div><!--/.container-->
+</div><!--/.top-bar-->
+
+</body>
+
+
